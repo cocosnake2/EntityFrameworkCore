@@ -21,8 +21,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             propertyBuilder.IsRequired(false, ConfigurationSource.Explicit);
 
-            new NonNullableReferencePropertyConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).Apply(
-                propertyBuilder);
+            new NonNullableReferencePropertyConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).ProcessPropertyAdded(
+                propertyBuilder, TODO);
 
             Assert.True(propertyBuilder.Metadata.IsNullable);
         }
@@ -36,8 +36,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             propertyBuilder.IsRequired(false, ConfigurationSource.DataAnnotation);
 
-            new NonNullableReferencePropertyConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).Apply(
-                propertyBuilder);
+            new NonNullableReferencePropertyConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).ProcessPropertyAdded(
+                propertyBuilder, TODO);
 
             Assert.True(propertyBuilder.Metadata.IsNullable);
         }

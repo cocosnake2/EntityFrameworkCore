@@ -46,7 +46,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
             propertyBuilder.HasAnnotation(RelationalAnnotationNames.ColumnName, "ConventionalName", ConfigurationSource.Convention);
             propertyBuilder.HasAnnotation(RelationalAnnotationNames.ColumnType, "BYTE", ConfigurationSource.Convention);
 
-            new RelationalColumnAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).Apply(propertyBuilder);
+            new RelationalColumnAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).ProcessPropertyAdded(propertyBuilder, TODO);
 
             Assert.Equal("Post Name", propertyBuilder.Metadata.GetColumnName());
             Assert.Equal("DECIMAL", propertyBuilder.Metadata.GetColumnType());
@@ -62,7 +62,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
             propertyBuilder.HasAnnotation(RelationalAnnotationNames.ColumnName, "ExplicitName", ConfigurationSource.Explicit);
             propertyBuilder.HasAnnotation(RelationalAnnotationNames.ColumnType, "BYTE", ConfigurationSource.Explicit);
 
-            new RelationalColumnAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).Apply(propertyBuilder);
+            new RelationalColumnAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).ProcessPropertyAdded(propertyBuilder, TODO);
 
             Assert.Equal("ExplicitName", propertyBuilder.Metadata.GetColumnName());
             Assert.Equal("BYTE", propertyBuilder.Metadata.GetColumnType());

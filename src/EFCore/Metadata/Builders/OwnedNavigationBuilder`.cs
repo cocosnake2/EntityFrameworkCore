@@ -328,7 +328,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             where TNewDependentEntity : class
         {
             InternalRelationshipBuilder relationship;
-            using (var batch = DependentEntityType.Model.ConventionDispatcher.StartBatch())
+            using (var batch = DependentEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 relationship = navigation.MemberInfo == null
                     ? DependentEntityType.Builder.HasOwnership(typeof(TNewDependentEntity), navigation.Name, ConfigurationSource.Explicit)
@@ -431,7 +431,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             Check.NotNull(navigationName, nameof(navigationName));
             Check.NotNull(buildAction, nameof(buildAction));
 
-            using (DependentEntityType.Model.ConventionDispatcher.StartBatch())
+            using (DependentEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 buildAction.Invoke(OwnsManyBuilder<TNewDependentEntity>(new PropertyIdentity(navigationName)));
                 return this;
@@ -470,7 +470,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             Check.NotNull(navigationExpression, nameof(navigationExpression));
             Check.NotNull(buildAction, nameof(buildAction));
 
-            using (DependentEntityType.Model.ConventionDispatcher.StartBatch())
+            using (DependentEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 buildAction.Invoke(OwnsManyBuilder<TNewDependentEntity>(new PropertyIdentity(navigationExpression.GetPropertyAccess())));
                 return this;
@@ -481,7 +481,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             where TNewRelatedEntity : class
         {
             InternalRelationshipBuilder relationship;
-            using (var batch = DependentEntityType.Model.ConventionDispatcher.StartBatch())
+            using (var batch = DependentEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 relationship = navigation.MemberInfo == null
                     ? DependentEntityType.Builder.HasOwnership(typeof(TNewRelatedEntity), navigation.Name, ConfigurationSource.Explicit)

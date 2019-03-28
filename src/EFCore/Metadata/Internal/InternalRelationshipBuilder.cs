@@ -304,7 +304,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             }
             else
             {
-                using (var batch = Metadata.DeclaringEntityType.Model.ConventionDispatcher.StartBatch())
+                using (var batch = Metadata.DeclaringEntityType.Model.ConventionDispatcher.DelayConventions())
                 {
                     builder = this;
                     Metadata.UpdateConfigurationSource(configurationSource);
@@ -904,7 +904,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     {
                         if (otherOwnership.Builder != null)
                         {
-                            otherOwnership.DeclaringEntityType.Builder.RemoveForeignKey(otherOwnership, configurationSource);
+                            otherOwnership.DeclaringEntityType.Builder.HasNoRelationship(otherOwnership, configurationSource);
                         }
                     }
 
@@ -912,7 +912,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     {
                         if (invertedOwnership.Builder != null)
                         {
-                            invertedOwnership.DeclaringEntityType.Builder.RemoveForeignKey(invertedOwnership, configurationSource);
+                            invertedOwnership.DeclaringEntityType.Builder.HasNoRelationship(invertedOwnership, configurationSource);
                         }
                     }
 
@@ -929,15 +929,15 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
                     newRelationshipBuilder = Metadata.SetIsOwnership(ownership: true, configurationSource)?.Builder;
 
-                    using (var batch = ModelBuilder.Metadata.ConventionDispatcher.StartBatch())
+                    using (var batch = ModelBuilder.Metadata.ConventionDispatcher.DelayConventions())
                     {
                         foreach (var invertedOwnership in invertedOwnerships)
                         {
-                            invertedOwnership.DeclaringEntityType.Builder.RemoveForeignKey(invertedOwnership, configurationSource);
+                            invertedOwnership.DeclaringEntityType.Builder.HasNoRelationship(invertedOwnership, configurationSource);
                         }
 
                         var fk = newRelationshipBuilder.Metadata;
-                        fk.DeclaringEntityType.Builder.RemoveForeignKey(fk, fk.GetConfigurationSource());
+                        fk.DeclaringEntityType.Builder.HasNoRelationship(fk, fk.GetConfigurationSource());
 
                         var otherOwnership = otherOwnerships.Single();
                         if (otherOwnership.Builder.IsWeakTypeDefinition(configurationSource) == null)
@@ -976,11 +976,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                         ?.ForeignKey.Builder;
                 }
 
-                using (var batch = ModelBuilder.Metadata.ConventionDispatcher.StartBatch())
+                using (var batch = ModelBuilder.Metadata.ConventionDispatcher.DelayConventions())
                 {
                     foreach (var invertedOwnership in invertedOwnerships)
                     {
-                        invertedOwnership.DeclaringEntityType.Builder.RemoveForeignKey(invertedOwnership, configurationSource);
+                        invertedOwnership.DeclaringEntityType.Builder.HasNoRelationship(invertedOwnership, configurationSource);
                     }
 
                     if (newRelationshipBuilder != null)
@@ -1093,7 +1093,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 return null;
             }
 
-            using (var batch = Metadata.DeclaringEntityType.Model.ConventionDispatcher.StartBatch())
+            using (var batch = Metadata.DeclaringEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 var builder = this;
                 if (resetToDependent)
@@ -1205,7 +1205,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 {
                     Metadata.UpdatePrincipalEndConfigurationSource(configurationSource);
 
-                    builder = ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
+                    builder = (InternalRelationshipBuilder)ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
                 }
 
                 return builder;
@@ -1270,7 +1270,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 {
                     Metadata.UpdatePrincipalEndConfigurationSource(configurationSource);
 
-                    builder = ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
+                    builder = (InternalRelationshipBuilder)ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
                 }
 
                 return builder;
@@ -1313,7 +1313,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
                 Metadata.UpdatePrincipalEndConfigurationSource(principalEndConfigurationSource.Value);
 
-                return ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(this);
+                return (InternalRelationshipBuilder)ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(this);
             }
 
             if (!CanSetRelatedTypes(
@@ -1420,7 +1420,84 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             [CanBeNull] IReadOnlyList<Property> newForeignKeyProperties, ConfigurationSource? configurationSource)
             => configurationSource.Overrides(Metadata.GetPrincipalEndConfigurationSource())
                && ((newForeignKeyProperties == null)
-                   || CanSetForeignKey(newForeignKeyProperties, configurationSource, Metadata.PrincipalEntityType));
+                   || CanSetForeignKey(newForeignKeyProperties, Metadata.PrincipalEntityType, configurationSource));
+
+        /// <summary>
+        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
+        ///     any release. You should only use it directly in your code with extreme caution and knowing that
+        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
+        /// </summary>
+        public virtual InternalRelationshipBuilder ReuniquifyTemporaryProperties(bool force)
+        {
+            if (!force
+                && (Metadata.GetPropertiesConfigurationSource() != null
+                    || !Metadata.DeclaringEntityType.Builder
+                        .ShouldReuniquifyTemporaryProperties(Metadata)))
+            {
+                return Metadata.Builder;
+            }
+
+            var relationshipBuilder = this;
+            using (var batch = Metadata.DeclaringEntityType.Model.ConventionDispatcher.DelayConventions())
+            {
+                var temporaryProperties = Metadata.Properties.Where(
+                    p => p.IsShadowProperty()
+                         && ConfigurationSource.Convention.Overrides(p.GetConfigurationSource())).ToList();
+
+                var keysToDetach = temporaryProperties.SelectMany(
+                        p => p.GetContainingKeys()
+                            .Where(k => ConfigurationSource.Convention.Overrides(k.GetConfigurationSource())))
+                    .Distinct().ToList();
+
+                List<RelationshipSnapshot> detachedRelationships = null;
+                foreach (var key in keysToDetach)
+                {
+                    foreach (var referencingForeignKey in key.GetReferencingForeignKeys().ToList())
+                    {
+                        if (detachedRelationships == null)
+                        {
+                            detachedRelationships = new List<RelationshipSnapshot>();
+                        }
+
+                        detachedRelationships.Add(InternalEntityTypeBuilder.DetachRelationship(referencingForeignKey));
+                    }
+                }
+
+                var detachedKeys = InternalEntityTypeBuilder.DetachKeys(keysToDetach);
+
+                var detachedIndexes = InternalEntityTypeBuilder.DetachIndexes(
+                    temporaryProperties.SelectMany(p => p.GetContainingIndexes()).Distinct());
+
+                relationshipBuilder = relationshipBuilder.HasForeignKey((IReadOnlyList<Property>)null, ConfigurationSource.Convention);
+
+                if (detachedIndexes != null)
+                {
+                    foreach (var indexBuilderTuple in detachedIndexes)
+                    {
+                        indexBuilderTuple.Attach(indexBuilderTuple.Metadata.DeclaringEntityType.Builder);
+                    }
+                }
+
+                if (detachedKeys != null)
+                {
+                    foreach (var detachedKeyTuple in detachedKeys)
+                    {
+                        detachedKeyTuple.Item1.Attach(Metadata.DeclaringEntityType.RootType().Builder, detachedKeyTuple.Item2);
+                    }
+                }
+
+                if (detachedRelationships != null)
+                {
+                    foreach (var detachedRelationship in detachedRelationships)
+                    {
+                        detachedRelationship.Attach();
+                    }
+                }
+
+                return batch.Run(relationshipBuilder);
+            }
+        }
 
         /// <summary>
         ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -1517,7 +1594,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 {
                     Metadata.UpdatePrincipalEndConfigurationSource(configurationSource);
 
-                    builder = ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
+                    builder = (InternalRelationshipBuilder)ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
                 }
 
                 return builder;
@@ -1553,8 +1630,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         private bool CanSetForeignKey(
             IReadOnlyList<Property> properties,
+            EntityType dependentEntityType,
             ConfigurationSource? configurationSource,
-            EntityType dependentEntityType = null,
             bool overrideSameSource = true)
             => CanSetForeignKey(
                 properties,
@@ -1696,7 +1773,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 {
                     Metadata.UpdatePrincipalEndConfigurationSource(configurationSource);
 
-                    builder = ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
+                    builder = (InternalRelationshipBuilder)ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyPrincipalEndChanged(builder);
                 }
 
                 return builder;
@@ -1947,7 +2024,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     && Metadata.DeclaringEntityType.IsAssignableFrom(dependentEntityTypeBuilder.Metadata)));
 
             InternalRelationshipBuilder newRelationshipBuilder;
-            using (var batch = Metadata.DeclaringEntityType.Model.ConventionDispatcher.StartBatch())
+            using (var batch = Metadata.DeclaringEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 newRelationshipBuilder = GetOrCreateRelationshipBuilder(
                     principalEntityTypeBuilder.Metadata,
@@ -2448,10 +2525,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 if (dependentProperties != null
                     && matchingRelationship.Metadata.Properties.SequenceEqual(dependentProperties))
                 {
-                    if (matchingRelationship.CanSetForeignKey(properties: null, configurationSource, overrideSameSource: false))
+                    if (matchingRelationship.CanSetForeignKey(properties: null, dependentEntityType: null, configurationSource: configurationSource, overrideSameSource: false))
                     {
                         resolution |= Resolution.ResetDependentProperties;
-                        sameConfigurationSource = sameConfigurationSource ?? false;
+                        sameConfigurationSource ??= false;
                     }
                     else if (matchingRelationship.CanSetForeignKey(properties: null, configurationSource))
                     {
@@ -2579,7 +2656,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 if (removeCurrent || newRelationshipBuilder != null)
                 {
                     removedForeignKeys.Add(Metadata);
-                    Metadata.DeclaringEntityType.Builder.RemoveForeignKey(Metadata, ConfigurationSource.Explicit);
+                    Metadata.DeclaringEntityType.Builder.HasNoRelationship(Metadata, ConfigurationSource.Explicit);
                 }
                 else
                 {
@@ -2619,7 +2696,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 if (resolution.HasFlag(Resolution.Remove))
                 {
                     removedForeignKeys.Add(resolvableRelationship.Metadata);
-                    resolvableRelationship.Metadata.DeclaringEntityType.Builder.RemoveForeignKey(
+                    resolvableRelationship.Metadata.DeclaringEntityType.Builder.HasNoRelationship(
                         resolvableRelationship.Metadata, ConfigurationSource.Explicit);
                     continue;
                 }
@@ -2644,7 +2721,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 var navigationLessForeignKey = resolvableRelationship.Metadata;
                 if (navigationLessForeignKey.DependentToPrincipal == null
                     && navigationLessForeignKey.PrincipalToDependent == null
-                    && navigationLessForeignKey.DeclaringEntityType.Builder.RemoveForeignKey(
+                    && navigationLessForeignKey.DeclaringEntityType.Builder.HasNoRelationship(
                         navigationLessForeignKey, ConfigurationSource.Convention) != null)
                 {
                     removedForeignKeys.Add(navigationLessForeignKey);
@@ -2949,7 +3026,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     dependentEntityType = model.FindEntityType(Metadata.DeclaringEntityType.Name);
                     if (dependentEntityType == null)
                     {
-                        using (ModelBuilder.Metadata.ConventionDispatcher.StartBatch())
+                        using (ModelBuilder.Metadata.ConventionDispatcher.DelayConventions())
                         {
                             if (model.EntityTypeShouldHaveDefiningNavigation(Metadata.DeclaringEntityType.Name))
                             {

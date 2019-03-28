@@ -68,7 +68,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var entityType = new Model().AddEntityType(typeof(BlogDuplicateService), ConfigurationSource.Explicit);
 
-            convention.Apply(entityType.Builder);
+            convention.ProcessEntityTypeAdded(entityType.Builder, TODO);
 
             Assert.Empty(entityType.GetServiceProperties());
 
@@ -77,7 +77,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                     nameof(BlogDuplicateService.ContextTwo), nameof(DbContext), nameof(BlogDuplicateService)),
                 Assert.Throws<InvalidOperationException>(
                     () =>
-                        TestServiceFactory.Instance.Create<ServicePropertyDiscoveryConvention>().Apply(entityType.Model.Builder)).Message);
+                        TestServiceFactory.Instance.Create<ServicePropertyDiscoveryConvention>().ProcessModelFinalized(entityType.Model.Builder, TODO)).Message);
         }
 
         [Fact]
@@ -89,17 +89,17 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var entityType = new Model().AddEntityType(typeof(BlogDuplicateService), ConfigurationSource.Explicit);
 
-            convention.Apply(entityType.Builder);
+            convention.ProcessEntityTypeAdded(entityType.Builder, TODO);
 
             Assert.Empty(entityType.GetServiceProperties());
 
             entityType.Builder.Ignore(nameof(BlogDuplicateService.ContextTwo), ConfigurationSource.Convention);
 
-            convention.Apply(entityType.Builder, nameof(BlogDuplicateService.ContextTwo));
+            convention.ProcessEntityTypeMemberIgnored(entityType.Builder, nameof(BlogDuplicateService.ContextTwo), TODO);
 
             Assert.NotNull(entityType.FindServiceProperty(nameof(BlogDuplicateService.ContextOne)));
 
-            convention.Apply(entityType.Model.Builder);
+            convention.ProcessModelFinalized(entityType.Model.Builder, TODO);
         }
 
         private static EntityType ApplyConvention<TEntity>()
@@ -112,7 +112,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var typeMappingSource = TestServiceFactory.Instance.Create<InMemoryTypeMappingSource>();
             TestServiceFactory.Instance.Create<ServicePropertyDiscoveryConvention>(
                     (typeof(ITypeMappingSource), typeMappingSource))
-                .Apply(entityType.Builder);
+                .ProcessEntityTypeAdded(entityType.Builder, TODO);
 
             return entityType;
         }

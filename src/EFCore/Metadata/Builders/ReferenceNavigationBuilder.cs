@@ -249,7 +249,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
                 ThrowForConflictingNavigation(Builder.Metadata, referenceName, false);
             }
 
-            using (var batch = Builder.Metadata.DeclaringEntityType.Model.ConventionDispatcher.StartBatch())
+            using (var batch = Builder.Metadata.DeclaringEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 var builder = Builder.IsUnique(true, ConfigurationSource.Explicit);
                 var foreignKey = builder.Metadata;

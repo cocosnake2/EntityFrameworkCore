@@ -38,7 +38,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         /// <param name="parameterName"> The parameter name. </param>
         /// <returns> The binding. </returns>
         ParameterBinding Bind(
-            [NotNull] IMutableEntityType entityType,
+            [NotNull] IEntityType entityType,
             [NotNull] Type parameterType,
             [NotNull] string parameterName);
     }

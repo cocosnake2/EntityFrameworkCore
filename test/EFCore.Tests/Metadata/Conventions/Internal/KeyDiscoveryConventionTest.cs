@@ -27,7 +27,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var entityBuilder = CreateInternalEntityBuilder<EntityWithNoId>();
 
-            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().Apply(entityBuilder));
+            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().ProcessEntityTypeAdded(entityBuilder, TODO));
 
             var key = entityBuilder.Metadata.FindPrimaryKey();
             Assert.Null(key);
@@ -39,7 +39,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var entityBuilder = CreateInternalEntityBuilder<EntityWithNoId>();
             var propertyBuilder = entityBuilder.Property(typeof(int), "Id", ConfigurationSource.DataAnnotation);
 
-            Assert.Same(propertyBuilder, CreateKeyDiscoveryConvention().Apply(propertyBuilder));
+            Assert.Same(propertyBuilder, CreateKeyDiscoveryConvention().ProcessPropertyAdded(propertyBuilder, TODO));
 
             var key = entityBuilder.Metadata.FindPrimaryKey();
             Assert.NotNull(key);
@@ -52,7 +52,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var entityBuilder = CreateInternalEntityBuilder<EntityWithNoId>();
             var propertyBuilder = entityBuilder.Property(typeof(int), "Id", ConfigurationSource.Convention);
 
-            Assert.Same(propertyBuilder, CreateKeyDiscoveryConvention().Apply(propertyBuilder));
+            Assert.Same(propertyBuilder, CreateKeyDiscoveryConvention().ProcessPropertyAdded(propertyBuilder, TODO));
 
             var key = entityBuilder.Metadata.FindPrimaryKey();
             Assert.Null(key);
@@ -68,7 +68,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var entityBuilder = CreateInternalEntityBuilder<EntityWithId>();
 
-            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().Apply(entityBuilder));
+            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().ProcessEntityTypeAdded(entityBuilder, TODO));
 
             var key = entityBuilder.Metadata.FindPrimaryKey();
             Assert.NotNull(key);
@@ -85,7 +85,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var entityBuilder = CreateInternalEntityBuilder<EntityWithTypeId>();
 
-            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().Apply(entityBuilder));
+            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().ProcessEntityTypeAdded(entityBuilder, TODO));
 
             var key = entityBuilder.Metadata.FindPrimaryKey();
             Assert.NotNull(key);
@@ -103,7 +103,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var entityBuilder = CreateInternalEntityBuilder<EntityWithIdAndTypeId>();
 
-            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().Apply(entityBuilder));
+            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().ProcessEntityTypeAdded(entityBuilder, TODO));
 
             var key = entityBuilder.Metadata.FindPrimaryKey();
             Assert.NotNull(key);
@@ -121,7 +121,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var entityBuilder = CreateInternalEntityBuilder<EntityWithMultipleIds>();
 
-            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().Apply(entityBuilder));
+            Assert.Same(entityBuilder, CreateKeyDiscoveryConvention().ProcessEntityTypeAdded(entityBuilder, TODO));
 
             var key = entityBuilder.Metadata.FindPrimaryKey();
             Assert.Null(key);
@@ -159,7 +159,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             new PropertyDiscoveryConvention(
                     TestServiceFactory.Instance.Create<InMemoryTypeMappingSource>(),
                     new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>())
-                .Apply(entityBuilder);
+                .ProcessEntityTypeAdded(entityBuilder, TODO);
 
             return entityBuilder;
         }

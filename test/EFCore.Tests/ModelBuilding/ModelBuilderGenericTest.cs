@@ -40,7 +40,8 @@ namespace Microsoft.EntityFrameworkCore.ModelBuilding
         {
             public bool Applied { get; private set; }
 
-            public InternalEntityTypeBuilder Apply(InternalEntityTypeBuilder entityTypeBuilder)
+            public void ProcessEntityTypeAdded(
+                IConventionEntityTypeBuilder entityTypeBuilder, IConventionContext<IConventionEntityTypeBuilder> context)
             {
                 Applied = true;
 

@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Utilities;
 
@@ -114,22 +113,9 @@ namespace Microsoft.EntityFrameworkCore.Infrastructure
         /// <param name="annotation"> The annotation set. </param>
         /// <param name="oldAnnotation"> The old annotation. </param>
         /// <returns> The annotation that was set. </returns>
-        protected virtual Annotation OnAnnotationSet(
-            [NotNull] string name, [CanBeNull] Annotation annotation, [CanBeNull] Annotation oldAnnotation)
+        protected virtual IConventionAnnotation OnAnnotationSet(
+            [NotNull] string name, [CanBeNull] IConventionAnnotation annotation, [CanBeNull] IConventionAnnotation oldAnnotation)
             => annotation;
-
-        /// <summary>
-        ///     Adds an annotation to this object or returns the existing annotation if one with the specified name
-        ///     already exists.
-        /// </summary>
-        /// <param name="name"> The key of the annotation to be added. </param>
-        /// <param name="value"> The value to be stored in the annotation. </param>
-        /// <returns>
-        ///     The existing annotation if an annotation with the specified name already exists. Otherwise, the newly
-        ///     added annotation.
-        /// </returns>
-        public virtual Annotation GetOrAddAnnotation([NotNull] string name, [CanBeNull] object value)
-            => FindAnnotation(name) ?? AddAnnotation(name, value);
 
         /// <summary>
         ///     Gets the annotation with the given name, returning <c>null</c> if it does not exist.

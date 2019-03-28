@@ -331,7 +331,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             where TRelatedEntity : class
         {
             InternalRelationshipBuilder relationship;
-            using (var batch = Builder.Metadata.Model.ConventionDispatcher.StartBatch())
+            using (var batch = Builder.Metadata.Model.ConventionDispatcher.DelayConventions())
             {
                 relationship = navigation.MemberInfo == null
                     ? Builder.HasOwnership(typeof(TRelatedEntity), navigation.Name, ConfigurationSource.Explicit)
@@ -477,7 +477,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             where TRelatedEntity : class
         {
             InternalRelationshipBuilder relationship;
-            using (var batch = Builder.Metadata.Model.ConventionDispatcher.StartBatch())
+            using (var batch = Builder.Metadata.Model.ConventionDispatcher.DelayConventions())
             {
                 relationship = navigation.MemberInfo == null
                     ? Builder.HasOwnership(typeof(TRelatedEntity), navigation.Name, ConfigurationSource.Explicit)
@@ -611,7 +611,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             var relatedEntityType = FindRelatedEntityType(typeof(TRelatedEntity), navigationName);
 
             InternalRelationshipBuilder relationship;
-            using (var batch = Builder.Metadata.Model.ConventionDispatcher.StartBatch())
+            using (var batch = Builder.Metadata.Model.ConventionDispatcher.DelayConventions())
             {
                 relationship = relatedEntityType.Builder
                     .HasRelationship(Builder.Metadata, ConfigurationSource.Explicit)
@@ -663,7 +663,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
             var relatedEntityType = FindRelatedEntityType(typeof(TRelatedEntity), navigation?.GetSimpleMemberName());
 
             InternalRelationshipBuilder relationship;
-            using (var batch = Builder.Metadata.Model.ConventionDispatcher.StartBatch())
+            using (var batch = Builder.Metadata.Model.ConventionDispatcher.DelayConventions())
             {
                 relationship = relatedEntityType.Builder
                     .HasRelationship(Builder.Metadata, ConfigurationSource.Explicit)

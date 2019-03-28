@@ -2060,6 +2060,38 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
                 GetString("NoDiscriminatorValue", nameof(entityType)),
                 entityType);
 
+        /// <summary>
+        ///     The foreign key {foreignKey} targeting the key {key} on '{principalType}' is defined on the entity type '{otherEntityType}', not '{entityType}'.
+        /// </summary>
+        public static string ForeignKeyWrongType([CanBeNull] object foreignKey, [CanBeNull] object key, [CanBeNull] object principalType, [CanBeNull] object otherEntityType, [CanBeNull] object entityType)
+            => string.Format(
+                GetString("ForeignKeyWrongType", nameof(foreignKey), nameof(key), nameof(principalType), nameof(otherEntityType), nameof(entityType)),
+                foreignKey, key, principalType, otherEntityType, entityType);
+
+        /// <summary>
+        ///     The index {index} is defined on the entity type '{otherEntityType}', not '{entityType}'.
+        /// </summary>
+        public static string IndexWrongType([CanBeNull] object index, [CanBeNull] object otherEntityType, [CanBeNull] object entityType)
+            => string.Format(
+                GetString("IndexWrongType", nameof(index), nameof(otherEntityType), nameof(entityType)),
+                index, otherEntityType, entityType);
+
+        /// <summary>
+        ///     The key {key} cis defined on the entity type '{otherEntityType}', not '{entityType}'.
+        /// </summary>
+        public static string KeyWrongType([CanBeNull] object key, [CanBeNull] object otherEntityType, [CanBeNull] object entityType)
+            => string.Format(
+                GetString("KeyWrongType", nameof(key), nameof(otherEntityType), nameof(entityType)),
+                key, otherEntityType, entityType);
+
+        /// <summary>
+        ///     The specified property '{property}' is declared on the entity type '{otherEntityType}', not '{entityType}'.
+        /// </summary>
+        public static string PropertyWrongType([CanBeNull] object property, [CanBeNull] object otherEntityType, [CanBeNull] object entityType)
+            => string.Format(
+                GetString("PropertyWrongType", nameof(property), nameof(otherEntityType), nameof(entityType)),
+                property, otherEntityType, entityType);
+
         private static string GetString(string name, params string[] formatterNames)
         {
             var value = _resourceManager.GetString(name);

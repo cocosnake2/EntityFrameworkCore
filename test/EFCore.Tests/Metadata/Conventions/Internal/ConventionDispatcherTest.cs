@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Xunit;
 using Index = Microsoft.EntityFrameworkCore.Metadata.Internal.Index;
@@ -34,7 +35,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var builder = new InternalModelBuilder(new Model(conventions));
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -83,7 +84,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var builder = new InternalModelBuilder(new Model(conventions));
             var owner = builder.Entity(typeof(Order), ConfigurationSource.Explicit);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -128,7 +129,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _onlyWeak = onlyWeak;
             }
 
-            public InternalEntityTypeBuilder Apply(InternalEntityTypeBuilder entityTypeBuilder)
+            public void ProcessEntityTypeAdded(
+                IConventionEntityTypeBuilder entityTypeBuilder, IConventionContext<IConventionEntityTypeBuilder> context)
             {
                 Assert.Same(entityTypeBuilder, entityTypeBuilder.Metadata.Builder);
                 if (entityTypeBuilder.Metadata.HasDefiningNavigation() == _onlyWeak)
@@ -142,7 +144,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                     {
                         if (_onlyWeak)
                         {
-                            entityTypeBuilder.ModelBuilder.RemoveEntityType(
+                            entityTypeBuilder.ModelBuilder.HasNoEntityType(
                                 entityTypeBuilder.Metadata, ConfigurationSource.Convention);
                         }
                     }
@@ -186,7 +188,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var builder = new InternalModelBuilder(new Model(conventions));
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             builder.Entity(typeof(Order), ConfigurationSource.Convention);
             if (useBuilder)
@@ -226,7 +228,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalModelBuilder modelBuilder, string name, Type type)
+            public void ProcessEntityTypeIgnored(
+                IConventionModelBuilder modelBuilder, string name, Type type, IConventionContext<string> context)
             {
                 Assert.Null(modelBuilder.Metadata.FindEntityType(name));
                 Calls++;
@@ -245,9 +248,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalModelBuilder modelBuilder, EntityType type)
+            public void ProcessEntityTypeRemoved(
+                IConventionModelBuilder modelBuilder, IConventionEntityType entityType, IConventionContext<IConventionEntityType> context)
             {
-                Assert.Null(modelBuilder.Metadata.FindEntityType(type.Name));
+                Assert.Null(modelBuilder.Metadata.FindEntityType(entityType.Name));
                 Calls++;
 
                 return !_terminate;
@@ -263,17 +267,17 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var conventions = new ConventionSet();
 
-            var convention1 = new BaseTypeChangedConvention(terminate: false);
-            var convention2 = new BaseTypeChangedConvention(terminate: true);
-            var convention3 = new BaseTypeChangedConvention(terminate: false);
-            conventions.BaseEntityTypeChangedConventions.Add(convention1);
-            conventions.BaseEntityTypeChangedConventions.Add(convention2);
-            conventions.BaseEntityTypeChangedConventions.Add(convention3);
+            var convention1 = new EntityTypeBaseTypeChangedConvention(terminate: false);
+            var convention2 = new EntityTypeBaseTypeChangedConvention(terminate: true);
+            var convention3 = new EntityTypeBaseTypeChangedConvention(terminate: false);
+            conventions.EntityTypeBaseTypeChangedConventions.Add(convention1);
+            conventions.EntityTypeBaseTypeChangedConventions.Add(convention2);
+            conventions.EntityTypeBaseTypeChangedConventions.Add(convention3);
 
             var builder = new InternalModelBuilder(new Model(conventions))
                 .Entity(typeof(SpecialOrder), ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.Model.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.Model.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -322,17 +326,19 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Empty(convention3.Calls);
         }
 
-        private class BaseTypeChangedConvention : IBaseTypeChangedConvention
+        private class EntityTypeBaseTypeChangedConvention : IEntityTypeBaseTypeChangedConvention
         {
             private readonly bool _terminate;
             public readonly List<Type> Calls = new List<Type>();
 
-            public BaseTypeChangedConvention(bool terminate)
+            public EntityTypeBaseTypeChangedConvention(bool terminate)
             {
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalEntityTypeBuilder entityTypeBuilder, EntityType oldBaseType)
+            public void ProcessEntityTypeBaseTypeChanged(
+                IConventionEntityTypeBuilder entityTypeBuilder, IConventionEntityType newBaseType, IConventionEntityType oldBaseType,
+                IConventionContext<IConventionEntityType> context)
             {
                 Assert.NotNull(entityTypeBuilder.Metadata.Builder);
 
@@ -361,7 +367,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var builder = new InternalModelBuilder(new Model(conventions));
             var entityBuilder = builder.Entity(typeof(SpecialOrder), ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -420,11 +426,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public Annotation Apply(
-                InternalEntityTypeBuilder entityTypeBuilder,
+            public void ProcessEntityTypeAnnotationChanged(
+                IConventionEntityTypeBuilder entityTypeBuilder,
                 string name,
-                Annotation annotation,
-                Annotation oldAnnotation)
+                IConventionAnnotation annotation,
+                IConventionAnnotation oldAnnotation, IConventionContext<IConventionAnnotation> context)
             {
                 Calls.Add(annotation?.Value);
 
@@ -450,7 +456,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var builder = new InternalModelBuilder(new Model(conventions));
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -508,11 +514,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public Annotation Apply(
-                InternalModelBuilder propertyBuilder,
+            public void ProcessModelAnnotationChanged(
+                IConventionModelBuilder propertyBuilder,
                 string name,
-                Annotation annotation,
-                Annotation oldAnnotation)
+                IConventionAnnotation annotation,
+                IConventionAnnotation oldAnnotation, IConventionContext<IConventionAnnotation> context)
             {
                 Assert.NotNull(propertyBuilder.Metadata.Builder);
 
@@ -541,7 +547,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var builder = new InternalModelBuilder(new Model(conventions));
             var entityBuilder = builder.Entity(typeof(SpecialOrder), ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -587,11 +593,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalEntityTypeBuilder entityTypeBuilder, string ignoredMemberName)
+            public void ProcessEntityTypeMemberIgnored(
+                IConventionEntityTypeBuilder entityTypeBuilder, string name, IConventionContext<string> context)
             {
                 Assert.NotNull(entityTypeBuilder.Metadata.Builder);
 
-                Calls.Add(ignoredMemberName);
+                Calls.Add(name);
                 return !_terminate;
             }
         }
@@ -616,7 +623,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var entityBuilder = builder.Entity(typeof(Order), ConfigurationSource.Convention);
             var shadowPropertyName = "ShadowProperty";
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -643,7 +650,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Equal(new[] { shadowPropertyName }, convention2.Calls);
             Assert.Empty(convention3.Calls);
 
-            scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -682,7 +689,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalPropertyBuilder Apply(InternalPropertyBuilder propertyBuilder)
+            public void ProcessPropertyAdded(
+                IConventionPropertyBuilder propertyBuilder, IConventionContext<IConventionPropertyBuilder> context)
             {
                 Assert.NotNull(propertyBuilder.Metadata.Builder);
 
@@ -718,7 +726,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var entityBuilder = builder.Entity(typeof(Order), ConfigurationSource.Convention);
             var propertyBuilder = entityBuilder.Property(Order.OrderIdProperty, ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -777,7 +785,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalPropertyBuilder propertyBuilder, FieldInfo oldFieldInfo)
+            public void ProcessPropertyFieldChanged(
+                IConventionPropertyBuilder propertyBuilder, FieldInfo newFieldInfo, FieldInfo oldFieldInfo,
+                IConventionContext<FieldInfo> context)
             {
                 Assert.NotNull(propertyBuilder.Metadata.Builder);
 
@@ -805,7 +815,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var builder = new ModelBuilder(conventions);
 
-            var scope = useScope ? ((Model)builder.Model).ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? ((Model)builder.Model).ConventionDispatcher.DelayConventions() : null;
 
             var propertyBuilder = builder.Entity<Order>().Property(e => e.Name);
             if (useBuilder)
@@ -913,7 +923,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalPropertyBuilder propertyBuilder)
+            public void ProcessPropertyNullabilityChanged(
+                IConventionPropertyBuilder propertyBuilder, IConventionContext<IConventionPropertyBuilder> context)
             {
                 Calls.Add(propertyBuilder.Metadata.IsNullable);
 
@@ -941,7 +952,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var propertyBuilder = builder.Entity(typeof(SpecialOrder), ConfigurationSource.Convention)
                 .Property(nameof(SpecialOrder.Name), ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1000,11 +1011,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public Annotation Apply(
-                InternalPropertyBuilder propertyBuilder,
+            public void ProcessPropertyAnnotationChanged(
+                IConventionPropertyBuilder propertyBuilder,
                 string name,
-                Annotation annotation,
-                Annotation oldAnnotation)
+                IConventionAnnotation annotation,
+                IConventionAnnotation oldAnnotation, IConventionContext<IConventionAnnotation> context)
             {
                 Assert.NotNull(propertyBuilder.Metadata.Builder);
 
@@ -1034,7 +1045,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var entityBuilder = builder.Entity(typeof(Order), ConfigurationSource.Convention);
             var keyPropertyName = "OrderId";
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1077,7 +1088,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalKeyBuilder Apply(InternalKeyBuilder keyBuilder)
+            public void ProcessKeyAdded(IConventionKeyBuilder keyBuilder, IConventionContext<IConventionKeyBuilder> context)
             {
                 Assert.NotNull(keyBuilder.Metadata.Builder);
 
@@ -1116,7 +1127,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                     "OrderId"
                 }, ConfigurationSource.Convention).Metadata;
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             Assert.Same(key, entityBuilder.Metadata.RemoveKey(key.Properties));
 
@@ -1142,7 +1153,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public void Apply(InternalEntityTypeBuilder entityTypeBuilder, Key key)
+            public void ProcessKeyRemoved(
+                IConventionEntityTypeBuilder entityTypeBuilder, IConventionKey key, IConventionContext<IConventionKey> context)
             {
                 Assert.NotNull(entityTypeBuilder.Metadata.Builder);
 
@@ -1159,19 +1171,19 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var conventions = new ConventionSet();
 
-            var convention1 = new PrimaryKeyChangedConvention(terminate: false);
-            var convention2 = new PrimaryKeyChangedConvention(terminate: true);
-            var convention3 = new PrimaryKeyChangedConvention(terminate: false);
-            conventions.PrimaryKeyChangedConventions.Add(convention1);
-            conventions.PrimaryKeyChangedConventions.Add(convention2);
-            conventions.PrimaryKeyChangedConventions.Add(convention3);
+            var convention1 = new EntityTypePrimaryKeyChangedConvention(terminate: false);
+            var convention2 = new EntityTypePrimaryKeyChangedConvention(terminate: true);
+            var convention3 = new EntityTypePrimaryKeyChangedConvention(terminate: false);
+            conventions.EntityTypePrimaryKeyChangedConventions.Add(convention1);
+            conventions.EntityTypePrimaryKeyChangedConventions.Add(convention2);
+            conventions.EntityTypePrimaryKeyChangedConventions.Add(convention3);
 
             var builder = new InternalModelBuilder(new Model(conventions));
             var entityBuilder = builder.Entity(typeof(Order), ConfigurationSource.Convention);
 
             entityBuilder.HasKey(new[] { "OrderId" }, ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1225,17 +1237,19 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Null(entityBuilder.Metadata.GetPrimaryKeyConfigurationSource());
         }
 
-        private class PrimaryKeyChangedConvention : IPrimaryKeyChangedConvention
+        private class EntityTypePrimaryKeyChangedConvention : IEntityTypePrimaryKeyChangedConvention
         {
             private readonly bool _terminate;
             public readonly List<object> Calls = new List<object>();
 
-            public PrimaryKeyChangedConvention(bool terminate)
+            public EntityTypePrimaryKeyChangedConvention(bool terminate)
             {
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalEntityTypeBuilder entityTypeBuilder, Key previousPrimaryKey)
+            public void ProcessEntityTypePrimaryKeyChanged(
+                IConventionEntityTypeBuilder entityTypeBuilder, IConventionKey newPrimaryKey, IConventionKey previousPrimaryKey,
+                IConventionContext<IConventionKey> context)
             {
                 Assert.NotNull(entityTypeBuilder.Metadata.Builder);
 
@@ -1264,7 +1278,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var builder = new InternalModelBuilder(new Model(conventions));
             var entityBuilder = builder.Entity(typeof(Order), ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1306,7 +1320,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalIndexBuilder Apply(InternalIndexBuilder indexBuilder)
+            public void ProcessIndexAdded(IConventionIndexBuilder indexBuilder, IConventionContext<IConventionIndexBuilder> context)
             {
                 Assert.NotNull(indexBuilder.Metadata.Builder);
 
@@ -1343,7 +1357,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                     "OrderId"
                 }, ConfigurationSource.Convention).Metadata;
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             Assert.Same(index, entityBuilder.Metadata.RemoveIndex(index.Properties));
 
@@ -1369,7 +1383,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public void Apply(InternalEntityTypeBuilder entityTypeBuilder, Index index)
+            public void ProcessIndexRemoved(
+                IConventionEntityTypeBuilder entityTypeBuilder, IConventionIndex index, IConventionContext<IConventionIndex> context)
             {
                 Assert.NotNull(entityTypeBuilder.Metadata.Builder);
 
@@ -1401,7 +1416,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                     "OrderId"
                 }, ConfigurationSource.Convention).Metadata;
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1462,7 +1477,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public bool Apply(InternalIndexBuilder indexBuilder)
+            public void ProcessIndexUniquenessChanged(
+                IConventionIndexBuilder indexBuilder, IConventionContext<IConventionIndexBuilder> context)
             {
                 Assert.NotNull(indexBuilder.Metadata.Builder);
 
@@ -1492,7 +1508,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var indexBuilder = builder.Entity(typeof(SpecialOrder), ConfigurationSource.Convention)
                 .HasIndex(new[] { nameof(SpecialOrder.Name) }, ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1551,11 +1567,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public Annotation Apply(
-                InternalIndexBuilder indexBuilder,
+            public void ProcessIndexAnnotationChanged(
+                IConventionIndexBuilder indexBuilder,
                 string name,
-                Annotation annotation,
-                Annotation oldAnnotation)
+                IConventionAnnotation annotation,
+                IConventionAnnotation oldAnnotation, IConventionContext<IConventionAnnotation> context)
             {
                 Assert.NotNull(indexBuilder.Metadata.Builder);
 
@@ -1585,7 +1601,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var entityBuilder = builder.Entity(typeof(Order), ConfigurationSource.Convention);
             entityBuilder.PrimaryKey(new[] { "OrderId" }, ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1627,7 +1643,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalRelationshipBuilder Apply(InternalRelationshipBuilder relationshipBuilder)
+            public void ProcessForeignKeyAdded(
+                IConventionRelationshipBuilder relationshipBuilder, IConventionContext<IConventionRelationshipBuilder> context)
             {
                 var fk = relationshipBuilder.Metadata;
                 Assert.NotNull(fk.Builder);
@@ -1667,7 +1684,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Explicit,
                 ConfigurationSource.Explicit);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             Assert.NotNull(
                 entityBuilder.Metadata.RemoveForeignKey(foreignKey.Properties, foreignKey.PrincipalKey, foreignKey.PrincipalEntityType));
@@ -1694,7 +1711,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public void Apply(InternalEntityTypeBuilder entityTypeBuilder, ForeignKey foreignKey)
+            public void ProcessForeignKeyRemoved(
+                IConventionEntityTypeBuilder entityTypeBuilder, IConventionForeignKey foreignKey,
+                IConventionContext<IConventionForeignKey> context)
             {
                 Assert.NotNull(entityTypeBuilder.Metadata.Builder);
 
@@ -1725,7 +1744,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Explicit,
                 ConfigurationSource.Explicit);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             foreignKey.SetProperties(
                 new[] { entityBuilder.Property(typeof(int), "FK2", ConfigurationSource.Convention).Metadata },
@@ -1758,10 +1777,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             {
             }
 
-            public InternalRelationshipBuilder Apply(
-                InternalRelationshipBuilder relationshipBuilder,
-                IReadOnlyList<Property> oldDependentProperties,
-                Key oldPrincipalKey)
+            public void ProcessForeignKeyPropertiesChanged(
+                IConventionRelationshipBuilder relationshipBuilder,
+                IReadOnlyList<IConventionProperty> oldDependentProperties,
+                IConventionKey oldPrincipalKey, IConventionContext<IConventionRelationshipBuilder> context)
             {
                 Assert.NotNull(relationshipBuilder.Metadata.Builder);
                 Assert.NotNull(oldDependentProperties);
@@ -1793,7 +1812,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var principalEntityBuilder = builder.Entity(typeof(Order), ConfigurationSource.Convention);
             var dependentEntityBuilder = builder.Entity(typeof(OrderDetails), ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1839,8 +1858,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalRelationshipBuilder Apply(
-                InternalRelationshipBuilder relationshipBuilder, Navigation navigation)
+            public void ProcessNavigationAdded(
+                IConventionRelationshipBuilder relationshipBuilder, IConventionNavigation navigation,
+                IConventionContext<IConventionNavigation> context)
             {
                 Assert.NotNull(relationshipBuilder.Metadata.Builder);
 
@@ -1886,7 +1906,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var relationshipBuilder = dependentEntityBuilder.HasRelationship(
                 principalEntityBuilder.Metadata, nameof(OrderDetails.Order), nameof(Order.OrderDetails), ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -1938,9 +1958,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public bool Apply(
-                InternalEntityTypeBuilder sourceEntityTypeBuilder, InternalEntityTypeBuilder targetEntityTypeBuilder,
-                string navigationName, MemberInfo memberInfo)
+            public void ProcessNavigationRemoved(
+                IConventionEntityTypeBuilder sourceEntityTypeBuilder, IConventionEntityTypeBuilder targetEntityTypeBuilder,
+                string navigationName, MemberInfo memberInfo, IConventionContext<string> context)
             {
                 Assert.NotNull(sourceEntityTypeBuilder.Metadata.Builder);
 
@@ -1971,7 +1991,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var dependentEntityBuilder = builder.Entity(typeof(OrderDetails), ConfigurationSource.Convention);
             var foreignKey = dependentEntityBuilder.HasRelationship(principalEntityBuilder.Metadata, ConfigurationSource.Convention).Metadata;
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -2035,7 +2055,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalRelationshipBuilder Apply(InternalRelationshipBuilder relationshipBuilder)
+            public void ProcessForeignKeyUniquenessChanged(
+                IConventionRelationshipBuilder relationshipBuilder, IConventionContext<IConventionRelationshipBuilder> context)
             {
                 Assert.NotNull(relationshipBuilder.Metadata.Builder);
 
@@ -2066,7 +2087,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var dependentEntityBuilder = builder.Entity(typeof(OrderDetails), ConfigurationSource.Convention);
             var foreignKey = dependentEntityBuilder.HasRelationship(principalEntityBuilder.Metadata, ConfigurationSource.Convention).Metadata;
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -2130,7 +2151,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalRelationshipBuilder Apply(InternalRelationshipBuilder relationshipBuilder)
+            public void ProcessForeignKeyRequirednessChanged(
+                IConventionRelationshipBuilder relationshipBuilder, IConventionContext<IConventionRelationshipBuilder> context)
             {
                 Assert.NotNull(relationshipBuilder.Metadata.Builder);
 
@@ -2161,7 +2183,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var dependentEntityBuilder = builder.Entity(typeof(OrderDetails), ConfigurationSource.Convention);
             var foreignKey = dependentEntityBuilder.HasRelationship(principalEntityBuilder.Metadata, ConfigurationSource.Convention).Metadata;
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             if (useBuilder)
             {
@@ -2225,7 +2247,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalRelationshipBuilder Apply(InternalRelationshipBuilder relationshipBuilder)
+            public void ProcessForeignKeyOwnershipChanged(
+                IConventionRelationshipBuilder relationshipBuilder, IConventionContext<IConventionRelationshipBuilder> context)
             {
                 Assert.NotNull(relationshipBuilder.Metadata.Builder);
 
@@ -2256,7 +2279,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var relationship = dependentEntityBuilder
                 .HasRelationship(entityBuilder.Metadata, ConfigurationSource.Convention);
 
-            var scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            var scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             relationship = relationship.HasPrincipalKey(Array.Empty<string>(), ConfigurationSource.Convention);
             Assert.NotNull(relationship);
@@ -2279,7 +2302,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Equal(new[] { nameof(Order) }, convention2.Calls);
             Assert.Empty(convention3.Calls);
 
-            scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             relationship.Metadata.SetPrincipalEndConfigurationSource(null);
             relationship = relationship.HasForeignKey(Array.Empty<string>(), ConfigurationSource.Convention);
@@ -2303,7 +2326,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Equal(new[] { nameof(Order), nameof(Order) }, convention2.Calls);
             Assert.Empty(convention3.Calls);
 
-            scope = useScope ? builder.Metadata.ConventionDispatcher.StartBatch() : null;
+            scope = useScope ? builder.Metadata.ConventionDispatcher.DelayConventions() : null;
 
             relationship = relationship.HasEntityTypes(
                 relationship.Metadata.DeclaringEntityType, relationship.Metadata.PrincipalEntityType, ConfigurationSource.Convention);
@@ -2347,7 +2370,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalRelationshipBuilder Apply(InternalRelationshipBuilder relationshipBuilder)
+            public void ProcessForeignKeyPrincipalEndChanged(
+                IConventionRelationshipBuilder relationshipBuilder, IConventionContext<IConventionRelationshipBuilder> context)
             {
                 Assert.NotNull(relationshipBuilder.Metadata.Builder);
 
@@ -2395,7 +2419,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 _terminate = terminate;
             }
 
-            public InternalModelBuilder Apply(InternalModelBuilder modelBuilder)
+            public void ProcessModelInitialized(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
             {
                 Assert.NotNull(modelBuilder.Metadata.Builder);
 
@@ -2412,12 +2436,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         {
             var conventions = new ConventionSet();
 
-            var convention1 = new ModelBuiltConvention(terminate: false);
-            var convention2 = new ModelBuiltConvention(terminate: true);
-            var convention3 = new ModelBuiltConvention(terminate: false);
-            conventions.ModelBuiltConventions.Add(convention1);
-            conventions.ModelBuiltConventions.Add(convention2);
-            conventions.ModelBuiltConventions.Add(convention3);
+            var convention1 = new ModelFinalizedConvention(terminate: false);
+            var convention2 = new ModelFinalizedConvention(terminate: true);
+            var convention3 = new ModelFinalizedConvention(terminate: false);
+            conventions.ModelFinalizedConventions.Add(convention1);
+            conventions.ModelFinalizedConventions.Add(convention2);
+            conventions.ModelFinalizedConventions.Add(convention3);
 
             var model = new Model(conventions);
 
@@ -2435,17 +2459,17 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Equal(0, convention3.Calls);
         }
 
-        private class ModelBuiltConvention : IModelBuiltConvention
+        private class ModelFinalizedConvention : IModelFinalizedConvention
         {
             private readonly bool _terminate;
             public int Calls;
 
-            public ModelBuiltConvention(bool terminate)
+            public ModelFinalizedConvention(bool terminate)
             {
                 _terminate = terminate;
             }
 
-            public InternalModelBuilder Apply(InternalModelBuilder modelBuilder)
+            public void ProcessModelFinalized(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
             {
                 Assert.NotNull(modelBuilder.Metadata.Builder);
 

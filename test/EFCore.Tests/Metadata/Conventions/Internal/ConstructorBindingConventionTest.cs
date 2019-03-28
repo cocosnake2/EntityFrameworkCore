@@ -760,7 +760,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             entityType.AddProperty("_FooBaar5", typeof(string));
             entityType.AddProperty("m_FooBaar6", typeof(string));
 
-            convention.Apply(((Model)entityType.Model).Builder);
+            convention.ProcessModelFinalized(((Model)entityType.Model).Builder, TODO);
 
             return (DirectConstructorBinding)entityType[CoreAnnotationNames.ConstructorBinding];
         }

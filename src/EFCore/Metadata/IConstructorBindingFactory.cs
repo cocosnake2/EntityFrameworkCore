@@ -31,7 +31,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         /// <param name="failedBindings"> The parameters that could not be bound. </param>
         /// <returns> True if a binding was created; false otherwise. </returns>
         bool TryBindConstructor(
-            [NotNull] IMutableEntityType entityType,
+            [NotNull] IEntityType entityType,
             [NotNull] ConstructorInfo constructor,
             [CanBeNull] out ConstructorBinding binding,
             [CanBeNull] out IEnumerable<ParameterInfo> failedBindings);

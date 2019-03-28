@@ -9,7 +9,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -33,12 +32,113 @@ namespace Microsoft.EntityFrameworkCore
             => type.ClrType?.GetTypeInfo().IsAbstract ?? false;
 
         /// <summary>
+        ///     Gets the root base type for a given entity type.
+        /// </summary>
+        /// <param name="entityType"> The type to find the root of. </param>
+        /// <returns>
+        ///     The root base type. If the given entity type is not a derived type, then the same entity type is returned.
+        /// </returns>
+        public static IEntityType RootType([NotNull] this IEntityType entityType)
+        {
+            Check.NotNull(entityType, nameof(entityType));
+
+            return entityType.BaseType?.RootType() ?? entityType;
+        }
+
+        /// <summary>
+        ///     Gets all types in the model that derive from a given entity type.
+        /// </summary>
+        /// <param name="entityType"> The base type to find types that derive from. </param>
+        /// <returns> The derived types. </returns>
+        public static IEnumerable<IEntityType> GetDerivedTypes([NotNull] this IEntityType entityType)
+            => Check.NotNull(entityType, nameof(entityType)).AsEntityType().GetDerivedTypes();
+
+        /// <summary>
         ///     Returns all derived types of the given <see cref="IEntityType" />, including the type itself.
         /// </summary>
         /// <param name="entityType"> The entity type. </param>
         /// <returns> Derived types. </returns>
         public static IEnumerable<IEntityType> GetDerivedTypesInclusive([NotNull] this IEntityType entityType)
             => new[] { entityType }.Concat(entityType.GetDerivedTypes());
+
+        /// <summary>
+        ///     Gets all types in the model that directly derive from a given entity type.
+        /// </summary>
+        /// <param name="entityType"> The base type to find types that derive from. </param>
+        /// <returns> The derived types. </returns>
+        public static IEnumerable<IEntityType> GetDirectlyDerivedTypes([NotNull] this IEntityType entityType)
+            => Check.NotNull(entityType, nameof(entityType)).AsEntityType().GetDirectlyDerivedTypes();
+
+        /// <summary>
+        ///     Determines if an entity type derives from (or is the same as) a given entity type.
+        /// </summary>
+        /// <param name="entityType"> The base entity type. </param>
+        /// <param name="derivedType"> The entity type to check if it derives from <paramref name="entityType" />. </param>
+        /// <returns>
+        ///     <c>true</c> if <paramref name="derivedType" /> derives from (or is the same as) <paramref name="entityType" />,
+        ///     otherwise <c>false</c>.
+        /// </returns>
+        public static bool IsAssignableFrom([NotNull] this IEntityType entityType, [NotNull] IEntityType derivedType)
+        {
+            Check.NotNull(entityType, nameof(entityType));
+            Check.NotNull(derivedType, nameof(derivedType));
+
+            var baseType = derivedType;
+            while (baseType != null)
+            {
+                if (baseType == entityType)
+                {
+                    return true;
+                }
+
+                baseType = baseType.BaseType;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Determines if an entity type derives from (but is not the same as) a given entity type.
+        /// </summary>
+        /// <param name="entityType"> The derived entity type. </param>
+        /// <param name="baseType"> The entity type to check if it is a base type of <paramref name="entityType" />. </param>
+        /// <returns>
+        ///     <c>true</c> if <paramref name="entityType" /> derives from (but is not the same as) <paramref name="baseType" />,
+        ///     otherwise <c>false</c>.
+        /// </returns>
+        public static bool IsStrictlyDerivedFrom([NotNull] this IEntityType entityType, [NotNull] IEntityType baseType)
+        {
+            Check.NotNull(entityType, nameof(entityType));
+            Check.NotNull(baseType, nameof(baseType));
+
+            if (entityType == baseType)
+            {
+                return false;
+            }
+
+            return baseType.IsAssignableFrom(entityType);
+        }
+
+        /// <summary>
+        ///     Gets the least derived type between the specified two.
+        /// </summary>
+        /// <param name="entityType"> The type to compare. </param>
+        /// <param name="otherEntityType"> The other entity type to compare with. </param>
+        /// <returns>
+        ///     The least derived type between the specified two.
+        ///     If the given entity types are not related, then <c>null</c> is returned.
+        /// </returns>
+        public static IEntityType LeastDerivedType([NotNull] this IEntityType entityType, [NotNull] IEntityType otherEntityType)
+        {
+            Check.NotNull(entityType, nameof(entityType));
+            Check.NotNull(otherEntityType, nameof(otherEntityType));
+
+            return entityType.IsAssignableFrom(otherEntityType)
+                ? entityType
+                : otherEntityType.IsAssignableFrom(entityType)
+                    ? otherEntityType
+                    : null;
+        }
 
         /// <summary>
         ///     Returns all base types of the given <see cref="IEntityType" />, including the type itself.
@@ -53,12 +153,27 @@ namespace Microsoft.EntityFrameworkCore
 
         /// <summary>
         ///     <para>
+        ///         Gets all keys declared on the given <see cref="IEntityType" />.
+        ///     </para>
+        ///     <para>
+        ///         This method does not return keys declared on base types.
+        ///         It is useful when iterating over all entity types to avoid processing the same key more than once.
+        ///         Use <see cref="IEntityType.GetKeys" /> to also return keys declared on base types.
+        ///     </para>
+        /// </summary>
+        /// <param name="entityType"> The entity type. </param>
+        /// <returns> Declared keys. </returns>
+        public static IEnumerable<IKey> GetDeclaredKeys([NotNull] this IEntityType entityType)
+            => entityType.AsEntityType().GetDeclaredKeys();
+
+        /// <summary>
+        ///     <para>
         ///         Gets all foreign keys declared on the given <see cref="IEntityType" />.
         ///     </para>
         ///     <para>
-        ///         This method does not return foreign keys declared on derived types.
+        ///         This method does not return foreign keys declared on base types.
         ///         It is useful when iterating over all entity types to avoid processing the same foreign key more than once.
-        ///         Use <see cref="IEntityType.GetForeignKeys" /> to also return foreign keys declared on derived types.
+        ///         Use <see cref="IEntityType.GetForeignKeys" /> to also return foreign keys declared on base types.
         ///     </para>
         /// </summary>
         /// <param name="entityType"> The entity type. </param>
@@ -68,12 +183,27 @@ namespace Microsoft.EntityFrameworkCore
 
         /// <summary>
         ///     <para>
+        ///         Gets all foreign keys declared on the types derived from the given <see cref="IEntityType" />.
+        ///     </para>
+        ///     <para>
+        ///         This method does not return foreign keys declared on the given entity type itself.
+        ///         Use <see cref="IEntityType.GetForeignKeys" /> to return foreign keys declared on this
+        ///         and base entity typed types.
+        ///     </para>
+        /// </summary>
+        /// <param name="entityType"> The entity type. </param>
+        /// <returns> Derived foreign keys. </returns>
+        public static IEnumerable<IForeignKey> GetDerivedForeignKeys([NotNull] this IEntityType entityType)
+            => entityType.AsEntityType().GetDerivedForeignKeys();
+
+        /// <summary>
+        ///     <para>
         ///         Gets all navigation properties declared on the given <see cref="IEntityType" />.
         ///     </para>
         ///     <para>
-        ///         This method does not return navigation properties declared on derived types.
+        ///         This method does not return navigation properties declared on base types.
         ///         It is useful when iterating over all entity types to avoid processing the same navigation property more than once.
-        ///         Use <see cref="GetNavigations" /> to also return navigation properties declared on derived types.
+        ///         Use <see cref="GetNavigations" /> to also return navigation properties declared on base types.
         ///     </para>
         /// </summary>
         /// <param name="entityType"> The entity type. </param>
@@ -90,9 +220,9 @@ namespace Microsoft.EntityFrameworkCore
         ///         Gets all non-navigation properties declared on the given <see cref="IEntityType" />.
         ///     </para>
         ///     <para>
-        ///         This method does not return properties declared on derived types.
+        ///         This method does not return properties declared on base types.
         ///         It is useful when iterating over all entity types to avoid processing the same property more than once.
-        ///         Use <see cref="IEntityType.GetProperties" /> to also return properties declared on derived types.
+        ///         Use <see cref="IEntityType.GetProperties" /> to also return properties declared on base types.
         ///     </para>
         /// </summary>
         /// <param name="entityType"> The entity type. </param>
@@ -105,9 +235,9 @@ namespace Microsoft.EntityFrameworkCore
         ///         Gets all service properties declared on the given <see cref="IEntityType" />.
         ///     </para>
         ///     <para>
-        ///         This method does not return properties declared on derived types.
+        ///         This method does not return properties declared on base types.
         ///         It is useful when iterating over all entity types to avoid processing the same property more than once.
-        ///         Use <see cref="IEntityType.GetServiceProperties" /> to also return properties declared on derived types.
+        ///         Use <see cref="IEntityType.GetServiceProperties" /> to also return properties declared on base types.
         ///     </para>
         /// </summary>
         /// <param name="entityType"> The entity type. </param>
@@ -120,9 +250,9 @@ namespace Microsoft.EntityFrameworkCore
         ///         Gets all indexes declared on the given <see cref="IEntityType" />.
         ///     </para>
         ///     <para>
-        ///         This method does not return indexes declared on derived types.
+        ///         This method does not return indexes declared on base types.
         ///         It is useful when iterating over all entity types to avoid processing the same index more than once.
-        ///         Use <see cref="IEntityType.GetForeignKeys" /> to also return indexes declared on derived types.
+        ///         Use <see cref="IEntityType.GetForeignKeys" /> to also return indexes declared on base types.
         ///     </para>
         /// </summary>
         /// <param name="entityType"> The entity type. </param>
@@ -196,112 +326,6 @@ namespace Microsoft.EntityFrameworkCore
                     ? type.Name
                     : type.Name.Substring(dotIndex + 1, type.Name.Length - dotIndex - 1)
                 : type.Name.Substring(plusIndex + 1, type.Name.Length - plusIndex - 1);
-        }
-
-        /// <summary>
-        ///     Gets all types in the model that derive from a given entity type.
-        /// </summary>
-        /// <param name="entityType"> The base type to find types that derive from. </param>
-        /// <returns> The derived types. </returns>
-        public static IEnumerable<IEntityType> GetDerivedTypes([NotNull] this IEntityType entityType)
-        {
-            Check.NotNull(entityType, nameof(entityType));
-
-            // ReSharper disable once LoopCanBeConvertedToQuery
-            foreach (var derivedType in entityType.Model.GetEntityTypes())
-            {
-                if (derivedType.BaseType != null
-                    && derivedType != entityType
-                    && entityType.IsAssignableFrom(derivedType))
-                {
-                    yield return derivedType;
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Gets the root base type for a given entity type.
-        /// </summary>
-        /// <param name="entityType"> The type to find the root of. </param>
-        /// <returns>
-        ///     The root base type. If the given entity type is not a derived type, then the same entity type is returned.
-        /// </returns>
-        public static IEntityType RootType([NotNull] this IEntityType entityType)
-        {
-            Check.NotNull(entityType, nameof(entityType));
-
-            return entityType.BaseType?.RootType() ?? entityType;
-        }
-
-        /// <summary>
-        ///     Determines if an entity type derives from (or is the same as) a given entity type.
-        /// </summary>
-        /// <param name="entityType"> The base entity type. </param>
-        /// <param name="derivedType"> The entity type to check if it derives from <paramref name="entityType" />. </param>
-        /// <returns>
-        ///     <c>true</c> if <paramref name="derivedType" /> derives from (or is the same as) <paramref name="entityType" />,
-        ///     otherwise <c>false</c>.
-        /// </returns>
-        public static bool IsAssignableFrom([NotNull] this IEntityType entityType, [NotNull] IEntityType derivedType)
-        {
-            Check.NotNull(entityType, nameof(entityType));
-            Check.NotNull(derivedType, nameof(derivedType));
-
-            var baseType = derivedType;
-            while (baseType != null)
-            {
-                if (baseType == entityType)
-                {
-                    return true;
-                }
-
-                baseType = baseType.BaseType;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        ///     Determines if an entity type derives from (but is not the same as) a given entity type.
-        /// </summary>
-        /// <param name="entityType"> The derived entity type. </param>
-        /// <param name="baseType"> The entity type to check if it is a base type of <paramref name="entityType" />. </param>
-        /// <returns>
-        ///     <c>true</c> if <paramref name="entityType" /> derives from (but is not the same as) <paramref name="baseType" />,
-        ///     otherwise <c>false</c>.
-        /// </returns>
-        public static bool IsStrictlyDerivedFrom([NotNull] this IEntityType entityType, [NotNull] IEntityType baseType)
-        {
-            Check.NotNull(entityType, nameof(entityType));
-            Check.NotNull(baseType, nameof(baseType));
-
-            if (entityType == baseType)
-            {
-                return false;
-            }
-
-            return baseType.IsAssignableFrom(entityType);
-        }
-
-        /// <summary>
-        ///     Gets the least derived type between the specified two.
-        /// </summary>
-        /// <param name="entityType"> The type to compare. </param>
-        /// <param name="otherEntityType"> The other entity type to compare with. </param>
-        /// <returns>
-        ///     The least derived type between the specified two.
-        ///     If the given entity types are not related, then <c>null</c> is returned.
-        /// </returns>
-        public static IEntityType LeastDerivedType([NotNull] this IEntityType entityType, [NotNull] IEntityType otherEntityType)
-        {
-            Check.NotNull(entityType, nameof(entityType));
-            Check.NotNull(otherEntityType, nameof(otherEntityType));
-
-            return entityType.IsAssignableFrom(otherEntityType)
-                ? entityType
-                : otherEntityType.IsAssignableFrom(entityType)
-                    ? otherEntityType
-                    : null;
         }
 
         /// <summary>
@@ -385,19 +409,12 @@ namespace Microsoft.EntityFrameworkCore
             [NotNull] IProperty property,
             [NotNull] IKey principalKey,
             [NotNull] IEntityType principalEntityType)
-        {
-            Check.NotNull(entityType, nameof(entityType));
-
-            return entityType.FindForeignKey(new[] { property }, principalKey, principalEntityType);
-        }
-
-        /// <summary>
-        ///     Returns the relationship to the owner if this is an owned type or <c>null</c> otherwise.
-        /// </summary>
-        /// <param name="entityType"> The entity type to find the foreign keys on. </param>
-        /// <returns> The relationship to the owner if this is an owned type or <c>null</c> otherwise. </returns>
-        public static IForeignKey FindOwnership([NotNull] this IEntityType entityType)
-            => ((EntityType)entityType).FindOwnership();
+            => Check.NotNull(entityType, nameof(entityType))
+                .FindForeignKey(
+                    new[]
+                    {
+                        property
+                    }, principalKey, principalEntityType);
 
         /// <summary>
         ///     Gets all foreign keys that target a given entity type (i.e. foreign keys where the given entity type
@@ -409,31 +426,64 @@ namespace Microsoft.EntityFrameworkCore
             => Check.NotNull(entityType, nameof(entityType)).AsEntityType().GetReferencingForeignKeys();
 
         /// <summary>
-        ///     Gets a navigation property on the given entity type. Returns null if no navigation property is found.
+        ///     Gets all foreign keys that target a given entity type (i.e. foreign keys where the given entity type
+        ///     is the principal).
+        /// </summary>
+        /// <param name="entityType"> The entity type to find the foreign keys for. </param>
+        /// <returns> The foreign keys that reference the given entity type. </returns>
+        public static IEnumerable<IForeignKey> GetDeclaredReferencingForeignKeys([NotNull] this IEntityType entityType)
+            => Check.NotNull(entityType, nameof(entityType)).AsEntityType().GetDeclaredReferencingForeignKeys();
+
+        /// <summary>
+        ///     Returns the relationship to the owner if this is an owned type or <c>null</c> otherwise.
+        /// </summary>
+        /// <param name="entityType"> The entity type to find the foreign keys on. </param>
+        /// <returns> The relationship to the owner if this is an owned type or <c>null</c> otherwise. </returns>
+        public static IForeignKey FindOwnership([NotNull] this IEntityType entityType)
+            => ((EntityType)entityType).FindOwnership();
+
+        /// <summary>
+        ///     Gets a navigation property on the given entity type. Returns <c>null</c> if no navigation property is found.
         /// </summary>
         /// <param name="entityType"> The entity type to find the navigation property on. </param>
-        /// <param name="propertyInfo"> The navigation property on the entity class. </param>
-        /// <returns> The navigation property, or null if none is found. </returns>
-        public static INavigation FindNavigation([NotNull] this IEntityType entityType, [NotNull] PropertyInfo propertyInfo)
+        /// <param name="memberInfo"> The navigation property on the entity class. </param>
+        /// <returns> The navigation property, or <c>null</c> if none is found. </returns>
+        public static INavigation FindNavigation([NotNull] this IEntityType entityType, [NotNull] MemberInfo memberInfo)
         {
             Check.NotNull(entityType, nameof(entityType));
-            Check.NotNull(propertyInfo, nameof(propertyInfo));
+            Check.NotNull(memberInfo, nameof(memberInfo));
 
-            return entityType.FindNavigation(propertyInfo.GetSimpleMemberName());
+            return entityType.FindNavigation(memberInfo.GetSimpleMemberName());
         }
 
         /// <summary>
-        ///     Gets a navigation property on the given entity type. Returns null if no navigation property is found.
+        ///     Gets a navigation property on the given entity type. Returns <c>null</c> if no navigation property is found.
         /// </summary>
         /// <param name="entityType"> The entity type to find the navigation property on. </param>
         /// <param name="name"> The name of the navigation property on the entity class. </param>
-        /// <returns> The navigation property, or null if none is found. </returns>
+        /// <returns> The navigation property, or <c>null</c> if none is found. </returns>
         public static INavigation FindNavigation([NotNull] this IEntityType entityType, [NotNull] string name)
         {
             Check.NotNull(entityType, nameof(entityType));
             Check.NotNull(name, nameof(name));
 
             return entityType.GetNavigations().FirstOrDefault(n => n.Name.Equals(name));
+        }
+
+        /// <summary>
+        ///     Returns the defining navigation if one exists or <c>null</c> otherwise.
+        /// </summary>
+        /// <param name="entityType"> The entity type to find the defining navigation for. </param>
+        /// <returns> The defining navigation if one exists or <c>null</c> otherwise. </returns>
+        public static INavigation FindDefiningNavigation([NotNull] this IEntityType entityType)
+        {
+            if (!entityType.HasDefiningNavigation())
+            {
+                return null;
+            }
+
+            var definingNavigation = entityType.DefiningEntityType.FindNavigation(entityType.DefiningNavigationName);
+            return definingNavigation?.GetTargetType() == entityType ? definingNavigation : null;
         }
 
         /// <summary>
@@ -446,23 +496,48 @@ namespace Microsoft.EntityFrameworkCore
 
         /// <summary>
         ///     <para>
-        ///         Gets a property on the given entity type. Returns null if no property is found.
+        ///         Gets a property on the given entity type. Returns <c>null</c> if no property is found.
         ///     </para>
         ///     <para>
         ///         This API only finds scalar properties and does not find navigation properties. Use
-        ///         <see cref="FindNavigation(IEntityType, PropertyInfo)" /> to find a navigation property.
+        ///         <see cref="FindNavigation(IEntityType, MemberInfo)" /> to find a navigation property.
         ///     </para>
         /// </summary>
         /// <param name="entityType"> The entity type to find the property on. </param>
-        /// <param name="propertyInfo"> The property on the entity class. </param>
-        /// <returns> The property, or null if none is found. </returns>
-        public static IProperty FindProperty([NotNull] this IEntityType entityType, [NotNull] PropertyInfo propertyInfo)
+        /// <param name="memberInfo"> The property on the entity class. </param>
+        /// <returns> The property, or <c>null</c> if none is found. </returns>
+        public static IProperty FindProperty([NotNull] this IEntityType entityType, [NotNull] MemberInfo memberInfo)
         {
             Check.NotNull(entityType, nameof(entityType));
-            Check.NotNull(propertyInfo, nameof(propertyInfo));
+            Check.NotNull(memberInfo, nameof(memberInfo));
 
-            return entityType.FindProperty(propertyInfo.GetSimpleMemberName());
+            return entityType.FindProperty(memberInfo.GetSimpleMemberName());
         }
+
+        /// <summary>
+        ///     <para>
+        ///         Finds matching properties on the given entity type. Returns <c>null</c> if any property is not found.
+        ///     </para>
+        ///     <para>
+        ///         This API only finds scalar properties and does not find navigation properties.
+        ///     </para>
+        /// </summary>
+        /// <param name="entityType"> The entity type to find the properties on. </param>
+        /// <param name="propertyNames"> The property names. </param>
+        /// <returns> The properties, or <c>null</c> if any property is not found. </returns>
+        public static IReadOnlyList<IProperty> FindProperties(
+            [NotNull] this IEntityType entityType,
+            [NotNull] IReadOnlyList<string> propertyNames)
+            => entityType.AsEntityType().FindProperties(Check.NotNull(propertyNames, nameof(propertyNames)));
+
+        /// <summary>
+        ///     Finds a property declared on the type with the given name.
+        /// </summary>
+        /// <param name="entityType"> The entity type to find the property on. </param>
+        /// <param name="name"> The property name. </param>
+        /// <returns> The property, or <c>null</c> if none is found. </returns>
+        public static IProperty FindDeclaredProperty([NotNull] this IEntityType entityType, [NotNull] string name)
+            => entityType.AsEntityType().FindDeclaredProperty(name);
 
         /// <summary>
         ///     Gets the index defined on the given property. Returns null if no index is defined.

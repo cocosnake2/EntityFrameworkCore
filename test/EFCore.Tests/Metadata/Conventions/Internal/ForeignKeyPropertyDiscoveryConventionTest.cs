@@ -44,7 +44,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .HasForeignKey(new[] { fkProperty }, ConfigurationSource.Explicit);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            Assert.Same(relationshipBuilder, convention.Apply(relationshipBuilder));
+            Assert.Same(relationshipBuilder, convention.ProcessForeignKeyAdded(relationshipBuilder, TODO));
 
             var fk = (IForeignKey)relationshipBuilder.Metadata;
             Assert.Same(fk, dependentTypeBuilder.Metadata.GetForeignKeys().Single());
@@ -53,7 +53,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.False(fk.IsUnique);
             Assert.True(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .HasForeignKey(new[] { fkProperty1.Metadata, fkProperty2.Metadata }, ConfigurationSource.Explicit);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            Assert.Same(relationshipBuilder, convention.Apply(relationshipBuilder));
+            Assert.Same(relationshipBuilder, convention.ProcessForeignKeyAdded(relationshipBuilder, TODO));
 
             var fk = (IForeignKey)relationshipBuilder.Metadata;
             Assert.Same(fk, DependentTypeWithCompositeKey.GetForeignKeys().Single());
@@ -90,7 +90,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(CompositePrimaryKey[1], fk.PrincipalKey.Properties[1]);
             Assert.False(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -103,7 +103,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            relationshipBuilder = convention.Apply(relationshipBuilder);
+            relationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = relationshipBuilder.Metadata;
             Assert.Same(fk, DependentType.GetForeignKeys().Single());
@@ -111,7 +111,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Equal("SomeNav" + PrimaryKey.Name, fk.Properties.Single().Name);
             Assert.False(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
@@ -141,7 +141,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.False(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -167,7 +167,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentTypeWithCompositeKey.GetForeignKeys().Single();
@@ -178,7 +178,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(CompositePrimaryKey[1], fk.PrincipalKey.Properties[1]);
             Assert.False(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -197,7 +197,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
@@ -207,7 +207,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.False(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -225,7 +225,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
@@ -233,7 +233,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(fkProperty, fk.Properties.Single());
             Assert.Same(PrimaryKey, fk.PrincipalKey.Properties.Single());
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -250,7 +250,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
@@ -258,7 +258,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(fkProperty, fk.Properties.Single());
             Assert.Same(PrimaryKey, fk.PrincipalKey.Properties.Single());
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -280,7 +280,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentTypeWithCompositeKey.GetForeignKeys().Single();
@@ -290,7 +290,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(CompositePrimaryKey[0], fk.PrincipalKey.Properties[0]);
             Assert.Same(CompositePrimaryKey[1], fk.PrincipalKey.Properties[1]);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -307,14 +307,14 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
             Assert.Same(fk, newRelationshipBuilder.Metadata);
             Assert.Equal("SomeNav" + PrimaryKey.Name, fk.Properties.Single().Name);
             Assert.Same(PrimaryKey, fk.PrincipalKey.Properties.Single());
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -334,7 +334,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
 
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
@@ -343,7 +343,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(PrimaryKey, fk.PrincipalKey.Properties.Single());
             Assert.True(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -358,7 +358,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
 
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             Assert.NotEqual(DependentEntity.IDProperty.Name, DependentType.FindPrimaryKey().Properties.Single().Name);
@@ -368,7 +368,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Equal("SomeNav" + PrimaryKey.Name, fk.Properties.Single().Name);
             Assert.True(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -388,7 +388,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = (IForeignKey)DependentTypeWithCompositeKey.GetForeignKeys().Single();
             Assert.Same(fk, newRelationshipBuilder.Metadata);
@@ -397,7 +397,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(CompositePrimaryKey[0], fk.PrincipalKey.Properties[0]);
             Assert.Same(CompositePrimaryKey[1], fk.PrincipalKey.Properties[1]);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -414,7 +414,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .DependentEntityType(DependentType, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
@@ -424,7 +424,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -441,7 +441,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
             Assert.Same(fk, newRelationshipBuilder.Metadata);
@@ -454,7 +454,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 CoreResources.LogIncompatibleMatchingForeignKeyProperties(new TestLogger<TestLoggingDefinitions>()).GenerateMessage(
                     "{'PrincipalEntityPeeKay' : string}", "{'PeeKay' : int}"), logEntry.Message);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -467,14 +467,14 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(false, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            Assert.Same(relationshipBuilder, convention.Apply(relationshipBuilder));
+            Assert.Same(relationshipBuilder, convention.ProcessForeignKeyAdded(relationshipBuilder, TODO));
 
             var fk = (IForeignKey)relationshipBuilder.Metadata;
             Assert.Same(fk, DependentType.GetForeignKeys().Single());
             Assert.Equal(PrincipalType.DisplayName() + PrimaryKey.Name, fk.Properties.Single().Name);
             Assert.False(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -487,7 +487,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsRequired(false, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            Assert.Same(relationshipBuilder, convention.Apply(relationshipBuilder));
+            Assert.Same(relationshipBuilder, convention.ProcessForeignKeyAdded(relationshipBuilder, TODO));
 
             var fk = (IForeignKey)relationshipBuilder.Metadata;
             Assert.NotSame(fkProperty, fk.Properties.Single());
@@ -496,7 +496,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -506,7 +506,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(true, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            Assert.Same(relationshipBuilder, convention.Apply(relationshipBuilder));
+            Assert.Same(relationshipBuilder, convention.ProcessForeignKeyAdded(relationshipBuilder, TODO));
 
             var fk = (IForeignKey)relationshipBuilder.Metadata;
             Assert.Same(fk, PrincipalType.GetForeignKeys().Single());
@@ -514,7 +514,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -532,7 +532,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .DependentEntityType(DependentTypeWithCompositeKey, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)DependentTypeWithCompositeKey.GetForeignKeys().Single();
@@ -543,7 +543,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -573,7 +573,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .DependentEntityType(dependentTypeWithCompositeKey, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = dependentTypeWithCompositeKey.Metadata.GetForeignKeys().Single();
             Assert.Same(fk, newRelationshipBuilder.Metadata);
@@ -585,7 +585,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Equal("NavProp" + CompositePrimaryKey[0].Name + "1", fk.Properties[0].Name);
             Assert.Equal("NavProp" + CompositePrimaryKey[1].Name + "1", fk.Properties[1].Name);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -603,7 +603,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(false, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            relationshipBuilder = convention.Apply(relationshipBuilder);
+            relationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = relationshipBuilder.Metadata;
             Assert.Same(fk, DependentTypeWithCompositeKey.GetForeignKeys().Single());
@@ -615,7 +615,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.False(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -630,7 +630,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(true, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            Assert.Same(relationshipBuilder, convention.Apply(relationshipBuilder));
+            Assert.Same(relationshipBuilder, convention.ProcessForeignKeyAdded(relationshipBuilder, TODO));
 
             var fk = (IForeignKey)relationshipBuilder.Metadata;
             Assert.Same(fk, DependentTypeWithCompositeKey.GetForeignKeys().Single());
@@ -642,7 +642,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -658,7 +658,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(true, ConfigurationSource.DataAnnotation);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            relationshipBuilder = convention.Apply(relationshipBuilder);
+            relationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = relationshipBuilder.Metadata;
             Assert.Same(fk, DependentTypeWithCompositeKey.GetForeignKeys().Single());
@@ -673,7 +673,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -689,7 +689,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 PrincipalTypeWithCompositeKey, "NavProp", null, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            relationshipBuilder = convention.Apply(relationshipBuilder);
+            relationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = relationshipBuilder.Metadata;
             Assert.Same(fk, DependentTypeWithCompositeKey.GetForeignKeys().Single());
@@ -697,7 +697,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(CompositePrimaryKey[0], fk.PrincipalKey.Properties[0]);
             Assert.Same(CompositePrimaryKey[1], fk.PrincipalKey.Properties[1]);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -719,7 +719,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 newRelationshipBuilder.Metadata.Properties.Single().Name);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            newRelationshipBuilder = convention.Apply(newRelationshipBuilder);
+            newRelationshipBuilder = convention.ProcessForeignKeyAdded(newRelationshipBuilder, TODO);
 
             var relationshipBuilder = DependentType.GetForeignKeys()
                 .Single(foreignKey => foreignKey != newRelationshipBuilder.Metadata)
@@ -742,7 +742,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                     nameof(PrincipalEntity),
                     "{'" + nameof(DependentEntity.SomeNavPeEKaY) + "'}"),
                 Assert.Throws<InvalidOperationException>(
-                    () => convention.Apply(newRelationshipBuilder.Metadata.DeclaringEntityType.Model.Builder)).Message);
+                    () => convention.ProcessModelFinalized(newRelationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO)).Message);
         }
 
         [Fact]
@@ -759,14 +759,14 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 relationshipBuilder.Metadata.Properties.Single().Name);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Null(newRelationshipBuilder.Metadata.GetPropertiesConfigurationSource());
 
-            newRelationshipBuilder = convention.Apply(otherRelationshipBuilder);
+            newRelationshipBuilder = convention.ProcessForeignKeyAdded(otherRelationshipBuilder, TODO);
             Assert.Equal(2, DependentType.GetForeignKeys().Count());
             Assert.Null(newRelationshipBuilder.Metadata.GetPropertiesConfigurationSource());
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
 
             var logEntry = ListLoggerFactory.Log.Single();
             Assert.Equal(LogLevel.Warning, logEntry.Level);
@@ -785,11 +785,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(true, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.NotSame(relationshipBuilder, newRelationshipBuilder);
             Assert.Same(DependentType, newRelationshipBuilder.Metadata.DeclaringEntityType);
 
-            newRelationshipBuilder = convention.Apply(newRelationshipBuilder);
+            newRelationshipBuilder = convention.ProcessForeignKeyAdded(newRelationshipBuilder, TODO);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
             Assert.Same(fk, newRelationshipBuilder.Metadata);
@@ -798,7 +798,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -810,10 +810,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(true, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(DependentType, newRelationshipBuilder.Metadata.DeclaringEntityType);
 
-            newRelationshipBuilder = convention.Apply(newRelationshipBuilder);
+            newRelationshipBuilder = convention.ProcessForeignKeyAdded(newRelationshipBuilder, TODO);
 
             var fk = (IForeignKey)DependentType.GetForeignKeys().Single();
             Assert.Same(fk, newRelationshipBuilder.Metadata);
@@ -823,7 +823,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.True(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -837,7 +837,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 .IsUnique(true, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var fk = (IForeignKey)newRelationshipBuilder.Metadata;
@@ -846,7 +846,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.True(fk.IsUnique);
             Assert.False(fk.IsRequired);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -863,10 +863,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             dependentType.Builder.PrimaryKey(new[] { nameof(DependentEntity.KayPee) }, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(dependentType, newRelationshipBuilder.Metadata.DeclaringEntityType);
 
-            newRelationshipBuilder = convention.Apply(newRelationshipBuilder);
+            newRelationshipBuilder = convention.ProcessForeignKeyAdded(newRelationshipBuilder, TODO);
 
             var fk = (IForeignKey)dependentType.GetForeignKeys().Single();
             Assert.Same(dependentType, fk.DeclaringEntityType);
@@ -874,7 +874,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(PrimaryKey, fk.PrincipalKey.Properties.Single());
             Assert.True(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -888,10 +888,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             dependentTypeBuilder.PrimaryKey(new[] { nameof(DependentEntity.KayPee) }, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(dependentTypeBuilder.Metadata, newRelationshipBuilder.Metadata.DeclaringEntityType);
 
-            newRelationshipBuilder = convention.Apply(newRelationshipBuilder);
+            newRelationshipBuilder = convention.ProcessForeignKeyAdded(newRelationshipBuilder, TODO);
 
             var fk = (IForeignKey)dependentTypeBuilder.Metadata.GetForeignKeys().Single();
             Assert.Same(dependentTypeBuilder.Metadata, fk.DeclaringEntityType);
@@ -899,7 +899,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(PrimaryKey, fk.PrincipalKey.Properties.Single());
             Assert.True(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -908,7 +908,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var relationshipBuilder = DependentType.Builder.HasRelationship(PrincipalType, "SomeNav", null, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            relationshipBuilder = convention.Apply(relationshipBuilder);
+            relationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = relationshipBuilder.Metadata;
             Assert.Same(fk, DependentType.GetForeignKeys().Single());
@@ -918,12 +918,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var property = DependentType.Builder.Property(typeof(int?), "SomeNavId", ConfigurationSource.Convention);
 
-            Assert.Same(property, convention.Apply(property));
+            Assert.Same(property, convention.ProcessPropertyAdded(property, TODO));
             Assert.Same(fk, DependentType.GetForeignKeys().Single());
             Assert.Equal("SomeNav" + PrimaryKey.Name, fk.Properties.Single().Name);
             Assert.False(fk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -932,7 +932,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var relationshipBuilder = DependentType.Builder.HasRelationship(PrincipalType, "SomeNav", null, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            relationshipBuilder = convention.Apply(relationshipBuilder);
+            relationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
 
             var fk = relationshipBuilder.Metadata;
             Assert.Same(fk, DependentType.GetForeignKeys().Single());
@@ -943,13 +943,13 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var property = DependentType.Builder.Property(DependentEntity.SomeNavIDProperty, ConfigurationSource.Convention);
 
-            Assert.Same(property, convention.Apply(property));
+            Assert.Same(property, convention.ProcessPropertyAdded(property, TODO));
 
             var newFk = DependentType.GetForeignKeys().Single();
             Assert.Same(fk, newFk);
             Assert.Equal(property.Metadata, newFk.Properties.Single());
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -970,8 +970,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             var property = DependentType.Builder.Property(DependentEntity.SomeNavIDProperty, ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            Assert.Same(property, convention.Apply(property));
-            Assert.Same(property, convention.Apply(property));
+            Assert.Same(property, convention.ProcessPropertyAdded(property, TODO));
+            Assert.Same(property, convention.ProcessPropertyAdded(property, TODO));
 
             var newFk = DependentType.GetForeignKeys().Single();
             Assert.NotSame(fk, newFk);
@@ -980,7 +980,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(newFk.PrincipalEntityType, fk.DeclaringEntityType);
             Assert.True(newFk.IsUnique);
 
-            convention.Apply(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder);
+            convention.ProcessModelFinalized(relationshipBuilder.Metadata.DeclaringEntityType.Model.Builder, TODO);
         }
 
         [Fact]
@@ -998,7 +998,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 ConfigurationSource.Convention);
 
             var convention = CreateForeignKeyPropertyDiscoveryConvention();
-            var newRelationshipBuilder = convention.Apply(relationshipBuilder);
+            var newRelationshipBuilder = convention.ProcessForeignKeyAdded(relationshipBuilder, TODO);
             Assert.Same(relationshipBuilder, newRelationshipBuilder);
 
             var otherRelationshipBuilder = dependentTypeBuilder.HasRelationship(
@@ -1007,7 +1007,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 null,
                 ConfigurationSource.Convention);
 
-            var otherNewRelationshipBuilder = convention.Apply(otherRelationshipBuilder);
+            var otherNewRelationshipBuilder = convention.ProcessForeignKeyAdded(otherRelationshipBuilder, TODO);
             Assert.Same(otherRelationshipBuilder, otherNewRelationshipBuilder);
 
             Assert.Equal(
@@ -1017,11 +1017,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                     nameof(DependentEntity),
                     nameof(PrincipalEntity),
                     "{'" + nameof(DependentEntity.PrincipalEntityPeEKaY) + "'}"),
-                Assert.Throws<InvalidOperationException>(() => convention.Apply(DependentType.Model.Builder)).Message);
+                Assert.Throws<InvalidOperationException>(() => convention.ProcessModelFinalized(DependentType.Model.Builder, TODO)).Message);
 
             newRelationshipBuilder.Metadata.UpdatePropertiesConfigurationSource(ConfigurationSource.Explicit);
 
-            convention.Apply(DependentType.Model.Builder);
+            convention.ProcessModelFinalized(DependentType.Model.Builder, TODO);
         }
 
         private static InternalModelBuilder BuildModel()

@@ -191,7 +191,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
                         dependentEntityTypeName));
             }
 
-            using (var batch = dependentEntityType.Model.ConventionDispatcher.StartBatch())
+            using (var batch = dependentEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 var builder = Builder.HasEntityTypes(
                     GetOtherEntityType(dependentEntityType), dependentEntityType, ConfigurationSource.Explicit);
@@ -303,7 +303,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
                         principalEntityTypeName));
             }
 
-            using (var batch = principalEntityType.Model.ConventionDispatcher.StartBatch())
+            using (var batch = principalEntityType.Model.ConventionDispatcher.DelayConventions())
             {
                 var builder = Builder.HasEntityTypes(
                     principalEntityType, GetOtherEntityType(principalEntityType), ConfigurationSource.Explicit);

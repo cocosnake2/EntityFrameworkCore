@@ -65,7 +65,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         /// <param name="parameterName"> The parameter name. </param>
         /// <returns> The binding. </returns>
         public override ParameterBinding Bind(
-            IMutableEntityType entityType,
+            IEntityType entityType,
             Type parameterType,
             string parameterName)
         {

@@ -39,7 +39,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
 
-            relationshipBuilder = CreateNotNullNavigationConvention().Apply(relationshipBuilder, navigation);
+            relationshipBuilder = CreateNotNullNavigationConvention().ProcessNavigationAdded(relationshipBuilder, navigation, TODO);
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
             Assert.Contains(principalEntityTypeBuilder.Metadata.GetNavigations(), nav => nav.Name == nameof(Blog.Posts));
@@ -64,7 +64,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
 
-            relationshipBuilder = CreateNotNullNavigationConvention().Apply(relationshipBuilder, navigation);
+            relationshipBuilder = CreateNotNullNavigationConvention().ProcessNavigationAdded(relationshipBuilder, navigation, TODO);
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
             Assert.Contains(principalEntityTypeBuilder.Metadata.GetNavigations(), nav => nav.Name == nameof(Blog.Posts));
@@ -88,7 +88,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
 
-            relationshipBuilder = CreateNotNullNavigationConvention().Apply(relationshipBuilder, navigation);
+            relationshipBuilder = CreateNotNullNavigationConvention().ProcessNavigationAdded(relationshipBuilder, navigation, TODO);
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
 
@@ -114,7 +114,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
 
-            relationshipBuilder = CreateNotNullNavigationConvention().Apply(relationshipBuilder, navigation);
+            relationshipBuilder = CreateNotNullNavigationConvention().ProcessNavigationAdded(relationshipBuilder, navigation, TODO);
 
             Assert.False(relationshipBuilder.Metadata.IsRequired);
         }
@@ -137,7 +137,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
             var navigation = principalEntityTypeBuilder.Metadata.FindNavigation(nameof(Principal.Dependent));
 
-            relationshipBuilder = CreateNotNullNavigationConvention().Apply(relationshipBuilder, navigation);
+            relationshipBuilder = CreateNotNullNavigationConvention().ProcessNavigationAdded(relationshipBuilder, navigation, TODO);
 
             Assert.Equal(nameof(Principal), relationshipBuilder.Metadata.DeclaringEntityType.DisplayName());
             Assert.True(relationshipBuilder.Metadata.IsRequired);

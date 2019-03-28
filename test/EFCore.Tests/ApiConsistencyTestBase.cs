@@ -114,10 +114,24 @@ namespace Microsoft.EntityFrameworkCore
         [Fact]
         public virtual void Public_api_arguments_should_have_not_null_annotation()
         {
+            Assert.Equal(0,
+                (from type in GetAllTypes(TargetAssembly.GetTypes())
+                   where type.GetTypeInfo().IsVisible && !typeof(Delegate).GetTypeInfo().IsAssignableFrom(type.GetTypeInfo())
+                   && !type.Namespace.Contains("Internal")
+                 from method in type.GetMethods(AnyInstance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                       .Concat<MethodBase>(type.GetConstructors())
+                   where (method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly)
+                   select method)
+                .Count()+
+                (from type in GetAllTypes(TargetAssembly.GetTypes())
+                 where type.GetTypeInfo().IsVisible && !typeof(Delegate).GetTypeInfo().IsAssignableFrom(type.GetTypeInfo())
+                 from method in type.GetProperties(AnyInstance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                 select method)
+                .Count());
             var parametersMissingAttribute
                 = (from type in GetAllTypes(TargetAssembly.GetTypes())
                    where type.GetTypeInfo().IsVisible && !typeof(Delegate).GetTypeInfo().IsAssignableFrom(type.GetTypeInfo())
-                                                      && type.Name == "IdentityShaper"
+                                                      && !type.Namespace.Contains("Internal")
                    let interfaceMappings = type.GetInterfaces().Select(i => type.GetTypeInfo().GetRuntimeInterfaceMap(i))
                    let events = type.GetEvents()
                    from method in type.GetMethods(AnyInstance | BindingFlags.Static | BindingFlags.DeclaredOnly)

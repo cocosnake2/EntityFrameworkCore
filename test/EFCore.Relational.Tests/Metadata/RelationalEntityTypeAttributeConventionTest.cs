@@ -33,7 +33,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
             entityBuilder.HasAnnotation(RelationalAnnotationNames.TableName, "ConventionalName", ConfigurationSource.Convention);
             entityBuilder.HasAnnotation(RelationalAnnotationNames.Schema, "ConventionalSchema", ConfigurationSource.Convention);
 
-            new RelationalTableAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).Apply(entityBuilder);
+            new RelationalTableAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).ProcessEntityTypeAdded(entityBuilder, TODO);
 
             Assert.Equal("MyTable", entityBuilder.Metadata.GetTableName());
             Assert.Equal("MySchema", entityBuilder.Metadata.GetSchema());
@@ -47,7 +47,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
             entityBuilder.HasAnnotation(RelationalAnnotationNames.TableName, "ExplicitName", ConfigurationSource.Explicit);
             entityBuilder.HasAnnotation(RelationalAnnotationNames.Schema, "ExplicitName", ConfigurationSource.Explicit);
 
-            new RelationalTableAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).Apply(entityBuilder);
+            new RelationalTableAttributeConvention(new TestLogger<DbLoggerCategory.Model, TestRelationalLoggingDefinitions>()).ProcessEntityTypeAdded(entityBuilder, TODO);
 
             Assert.Equal("ExplicitName", entityBuilder.Metadata.GetTableName());
             Assert.Equal("ExplicitName", entityBuilder.Metadata.GetSchema());

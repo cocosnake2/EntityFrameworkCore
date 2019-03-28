@@ -109,8 +109,7 @@ namespace Microsoft.EntityFrameworkCore
         ///     The foreign keys that use this property.
         /// </returns>
         public static IEnumerable<IForeignKey> GetContainingForeignKeys([NotNull] this IProperty property)
-            => Check.NotNull(property, nameof(property)).AsProperty().ForeignKeys
-               ?? Enumerable.Empty<IForeignKey>();
+            => Check.NotNull(property, nameof(property)).AsProperty().GetContainingForeignKeys();
 
         /// <summary>
         ///     Gets all indexes that use this property (including composite indexes in which this property
@@ -121,8 +120,7 @@ namespace Microsoft.EntityFrameworkCore
         ///     The indexes that use this property.
         /// </returns>
         public static IEnumerable<IIndex> GetContainingIndexes([NotNull] this IProperty property)
-            => Check.NotNull(property, nameof(property)).AsProperty().Indexes
-               ?? Enumerable.Empty<IIndex>();
+            => Check.NotNull(property, nameof(property)).AsProperty().GetContainingIndexes();
 
         /// <summary>
         ///     Gets the primary key that uses this property (including a composite primary key in which this property
@@ -156,8 +154,7 @@ namespace Microsoft.EntityFrameworkCore
         ///     The primary and alternate keys that use this property.
         /// </returns>
         public static IEnumerable<IKey> GetContainingKeys([NotNull] this IProperty property)
-            => Check.NotNull(property, nameof(property)).AsProperty().Keys
-               ?? Enumerable.Empty<IKey>();
+            => Check.NotNull(property, nameof(property)).AsProperty().GetContainingKeys();
 
         /// <summary>
         ///     Gets the maximum length of data that is allowed in this property. For example, if the property is a <see cref="string" /> '

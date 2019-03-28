@@ -145,6 +145,17 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         }
 
         /// <summary>
+        ///     Runs the conventions when an annotation was set or removed.
+        /// </summary>
+        /// <param name="name"> The key of the set annotation. </param>
+        /// <param name="annotation"> The annotation set. </param>
+        /// <param name="oldAnnotation"> The old annotation. </param>
+        /// <returns> The annotation that was set. </returns>
+        protected override IConventionAnnotation OnAnnotationSet(
+            string name, IConventionAnnotation annotation, IConventionAnnotation oldAnnotation)
+            => Builder.ModelBuilder.Metadata.ConventionDispatcher.OnForeignKeyAnnotationChanged(Builder, name, annotation, oldAnnotation);
+
+        /// <summary>
         ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
         ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
         ///     any release. You should only use it directly in your code with extreme caution and knowing that
@@ -481,7 +492,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             }
 
             return isChanging
-                ? DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyUniquenessChanged(Builder)?.Metadata
+                ? (ForeignKey)DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyUniquenessChanged(Builder)?.Metadata
                 : this;
         }
 
@@ -537,7 +548,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             }
 
             return oldRequired != IsRequired
-                ? DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyRequirednessChanged(Builder)?.Metadata
+                ? (ForeignKey)DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyRequirednessChanged(Builder)?.Metadata
                 : this;
         }
 
@@ -655,8 +666,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             }
 
             return isChanging
-                ? DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyOwnershipChanged(Builder)?.Metadata
-                : (this);
+                ? (ForeignKey)DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyOwnershipChanged(Builder)?.Metadata
+                : this;
         }
 
         private static bool DefaultIsOwnership => false;
@@ -684,15 +695,6 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     any release. You should only use it directly in your code with extreme caution and knowing that
         ///     doing so can result in application failures when updating to a new Entity Framework Core release.
         /// </summary>
-        public virtual IEnumerable<Navigation> FindNavigationsFrom([NotNull] EntityType entityType)
-            => ((IForeignKey)this).FindNavigationsFrom(entityType).Cast<Navigation>();
-
-        /// <summary>
-        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-        ///     any release. You should only use it directly in your code with extreme caution and knowing that
-        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-        /// </summary>
         public virtual IEnumerable<Navigation> FindNavigationsFromInHierarchy([NotNull] EntityType entityType)
             => ((IForeignKey)this).FindNavigationsFromInHierarchy(entityType).Cast<Navigation>();
 
@@ -711,35 +713,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     any release. You should only use it directly in your code with extreme caution and knowing that
         ///     doing so can result in application failures when updating to a new Entity Framework Core release.
         /// </summary>
-        public virtual IEnumerable<Navigation> FindNavigationsToInHierarchy([NotNull] EntityType entityType)
-            => ((IForeignKey)this).FindNavigationsToInHierarchy(entityType).Cast<Navigation>();
-
-        /// <summary>
-        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-        ///     any release. You should only use it directly in your code with extreme caution and knowing that
-        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-        /// </summary>
-        public virtual EntityType ResolveOtherEntityTypeInHierarchy([NotNull] EntityType entityType)
-            => (EntityType)((IForeignKey)this).ResolveOtherEntityTypeInHierarchy(entityType);
-
-        /// <summary>
-        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-        ///     any release. You should only use it directly in your code with extreme caution and knowing that
-        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-        /// </summary>
         public virtual EntityType ResolveOtherEntityType([NotNull] EntityType entityType)
             => (EntityType)((IForeignKey)this).ResolveOtherEntityType(entityType);
-
-        /// <summary>
-        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-        ///     any release. You should only use it directly in your code with extreme caution and knowing that
-        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-        /// </summary>
-        public virtual EntityType ResolveEntityTypeInHierarchy([NotNull] EntityType entityType)
-            => (EntityType)((IForeignKey)this).ResolveEntityTypeInHierarchy(entityType);
 
         // Note: This is set and used only by IdentityMapFactoryFactory, which ensures thread-safety
         /// <summary>

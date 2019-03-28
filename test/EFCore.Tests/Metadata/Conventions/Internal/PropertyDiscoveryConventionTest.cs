@@ -154,7 +154,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             Assert.Same(
                 entityBuilder, new PropertyDiscoveryConvention(
                     TestServiceFactory.Instance.Create<InMemoryTypeMappingSource>(),
-                    new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).Apply(entityBuilder));
+                    new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).ProcessEntityTypeAdded(entityBuilder, TODO));
 
             Assert.Empty(entityBuilder.Metadata.GetProperties());
         }
@@ -216,7 +216,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 entityBuilder, new PropertyDiscoveryConvention(
                         TestServiceFactory.Instance.Create<InMemoryTypeMappingSource>(),
                         new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>())
-                    .Apply(entityBuilder));
+                    .ProcessEntityTypeAdded(entityBuilder, TODO));
 
             Assert.Equal(
                 typeof(EntityWithEveryPrimitive)
@@ -239,7 +239,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 entityBuilder, new PropertyDiscoveryConvention(
                         TestServiceFactory.Instance.Create<InMemoryTypeMappingSource>(),
                         new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>())
-                    .Apply(entityBuilder));
+                    .ProcessEntityTypeAdded(entityBuilder, TODO));
 
             Assert.Empty(entityBuilder.Metadata.GetProperties());
         }

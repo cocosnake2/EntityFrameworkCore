@@ -253,7 +253,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
 
             new BackingFieldConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>())
-                .Apply(((ForeignKey)foreignKey).Builder, (Navigation)navigation);
+                .ProcessNavigationAdded(((ForeignKey)foreignKey).Builder, (Navigation)navigation, TODO);
 
             var accessor = new ClrCollectionAccessorFactory().Create(navigation);
 
@@ -412,7 +412,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 typeof(MyEntity).GetProperty(navigationName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
 
             new BackingFieldConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>())
-                .Apply(((ForeignKey)foreignKey).Builder, (Navigation)navigation);
+                .ProcessNavigationAdded(((ForeignKey)foreignKey).Builder, (Navigation)navigation, TODO);
 
             return navigation;
         }

@@ -232,7 +232,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             Assert.NotNull(modelBuilder.Ignore(typeof(Customer), ConfigurationSource.Explicit));
 
-            modelBuilder = new ModelCleanupConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).Apply(modelBuilder);
+            modelBuilder = new ModelCleanupConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).ProcessModelFinalized(modelBuilder, TODO);
             Assert.Empty(modelBuilder.Metadata.GetEntityTypes());
         }
 
@@ -255,7 +255,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             Assert.NotNull(modelBuilder.Ignore(typeof(Customer), ConfigurationSource.DataAnnotation));
 
-            modelBuilder = new ModelCleanupConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).Apply(modelBuilder);
+            modelBuilder = new ModelCleanupConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).ProcessModelFinalized(modelBuilder, TODO);
             Assert.Equal(new[] { typeof(Order), typeof(Product) }, modelBuilder.Metadata.GetEntityTypes().Select(et => et.ClrType));
             Assert.Equal(typeof(Product), orderEntityTypeBuilder.Metadata.GetForeignKeys().Single().PrincipalEntityType.ClrType);
         }
@@ -279,7 +279,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             Assert.NotNull(modelBuilder.Ignore(typeof(Customer), ConfigurationSource.DataAnnotation));
 
-            modelBuilder = new ModelCleanupConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).Apply(modelBuilder);
+            modelBuilder = new ModelCleanupConvention(new TestLogger<DbLoggerCategory.Model, TestLoggingDefinitions>()).ProcessModelFinalized(modelBuilder, TODO);
             Assert.Equal(new[] { typeof(Order), typeof(Product) }, modelBuilder.Metadata.GetEntityTypes().Select(et => et.ClrType));
             Assert.Equal(typeof(Product), orderEntityTypeBuilder.Metadata.GetForeignKeys().Single().PrincipalEntityType.ClrType);
         }
